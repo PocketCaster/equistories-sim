@@ -758,6 +758,7 @@ function horseCardHTML(h){
 
 function renderLoginScreen(){
   const app = document.getElementById('app');
+  const stableSet = !!STABLE_URL;
   app.innerHTML = `
     <h1>🐴 EquiStories Stable Manager</h1>
     <div class="card" style="max-width:460px; margin:40px auto;">
@@ -775,6 +776,18 @@ function renderLoginScreen(){
       <div id="li_result" style="margin-top:8px;"></div>
       <hr style="border-color:#4a392a; margin:16px 0;" />
       <div class="small" style="color:var(--dim); margin-bottom:6px;">First time here? Make sure you have a Buxx Bank account. Ask your group admin if you need help.</div>
+      <hr style="border-color:#4a392a; margin:16px 0;" />
+      <details ${!stableSet ? 'open' : ''}>
+        <summary style="cursor:pointer; font-size:.85em; color:var(--dim);">⚙️ Admin: Configure Stable Data URL</summary>
+        <div style="margin-top:10px;">
+          <p class="small" style="color:var(--dim); margin-top:0;">Paste the /exec URL from your deployed Stable Data Apps Script. Only needs to be done once.</p>
+          ${stableSet ? `<div class="result success" style="margin-bottom:8px; font-size:.8em;">✅ Stable URL is configured.</div>` : `<div class="result fail" style="margin-bottom:8px; font-size:.8em;">⚠️ Not configured yet — players cannot log in until this is set.</div>`}
+          <label>Stable Data Script URL</label>
+          <input id="li_stable_url" placeholder="https://script.google.com/macros/s/…/exec" value="${STABLE_URL||''}" style="margin-bottom:6px;" />
+          <button id="li_save_url" class="secondary" style="width:100%; margin-top:4px;">💾 Save Stable URL</button>
+          <div id="li_url_result" style="margin-top:6px;"></div>
+        </div>
+      </details>
     </div>
   `;
   app.querySelector('#li_go').onclick = async () => {
@@ -782,9 +795,8 @@ function renderLoginScreen(){
     const password = app.querySelector('#li_pass').value.trim();
     const res      = app.querySelector('#li_result');
     if(!userId || !password){ res.innerHTML = '<div class="result fail">Please enter both your User ID and password.</div>'; return; }
-    if(!STABLE_URL){ res.innerHTML = '<div class="result fail">⚠️ The Stable Data URL has not been configured yet. Ask your admin to set it up.</div>'; return; }
+    if(!STABLE_URL){ res.innerHTML = '<div class="result fail">⚠️ The Stable Data URL has not been configured yet — expand the Admin section below and paste it in first.</div>'; return; }
     res.innerHTML = '<div class="small" style="color:var(--dim);">Signing in…</div>';
-    // Verify against bank
     const data = await gasPost({action:'loginPlayer', userId, password});
     if(data && data.success){
       bankAccount = {userId, password, linked:true};
@@ -796,8 +808,17 @@ function renderLoginScreen(){
       res.innerHTML = `<div class="result fail">❌ ${(data && data.error)||'Login failed — check your User ID and password.'}</div>`;
     }
   };
-  // Allow Enter key
   app.querySelector('#li_pass').onkeydown = (e) => { if(e.key==='Enter') app.querySelector('#li_go').click(); };
+  app.querySelector('#li_save_url').onclick = () => {
+    const url = app.querySelector('#li_stable_url').value.trim();
+    const res = app.querySelector('#li_url_result');
+    if(!url){ res.innerHTML = '<div class="result fail">Please paste a URL first.</div>'; return; }
+    if(!url.includes('script.google.com')){ res.innerHTML = '<div class="result fail">That does not look like a Google Apps Script URL.</div>'; return; }
+    STABLE_URL = url;
+    localStorage.setItem('equi_stable_url', url);
+    res.innerHTML = '<div class="result success">✅ Saved! You can now sign in.</div>';
+    setTimeout(()=> renderLoginScreen(), 1200);
+  };
 }
 
 function render(){
