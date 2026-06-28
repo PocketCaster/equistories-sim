@@ -1,3 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EquiStories Stable Manager</title>
+</head>
+<body>
 <div id="app"></div>
 <style>
   html, body{ background:#1b1410; margin:0; padding:0; }
@@ -1364,7 +1372,7 @@ function renderBank(container){
     const url = card.querySelector('#bk_stable_url').value.trim();
     const res = card.querySelector('#bk_url_result');
     if(!url){ res.innerHTML = '<div class="result fail">Please paste a URL first.</div>'; return; }
-    if(!url.includes('script.google.com')){ res.innerHTML = '<div class="result fail">That doesn't look like a Google Apps Script URL.</div>'; return; }
+    if(!url.includes('script.google.com')){ res.innerHTML = '<div class="result fail">That does not look like a Google Apps Script URL.</div>'; return; }
     STABLE_URL = url;
     localStorage.setItem('equi_stable_url', url);
     res.innerHTML = '<div class="result success">✅ Stable URL saved to this browser!</div>';
@@ -1384,3 +1392,5 @@ function renderLog(){
 load();
 })();
 </script>
+</body>
+</html>
