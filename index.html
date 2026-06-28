@@ -815,7 +815,7 @@ function renderLoginScreen(){
   app.querySelector('#li_pass').onkeydown = (e) => { if(e.key==='Enter') app.querySelector('#li_go').click(); };
   app.querySelector('#li_admin_unlock').onclick = () => {
     const entered = app.querySelector('#li_admin_pass').value;
-    if(entered === 'Eqistories123'){
+    if(entered === 'Equistories123'){
       app.querySelector('#admin_lock').style.display = 'none';
       app.querySelector('#admin_panel').style.display = 'block';
     } else {
