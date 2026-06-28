@@ -815,7 +815,7 @@ function renderLoginScreen(){
   app.querySelector('#li_pass').onkeydown = (e) => { if(e.key==='Enter') app.querySelector('#li_go').click(); };
   app.querySelector('#li_admin_unlock').onclick = () => {
     const entered = app.querySelector('#li_admin_pass').value;
-    if(entered === 'Equistories123'){
+    if(entered === 'Eqistories123'){
       app.querySelector('#admin_lock').style.display = 'none';
       app.querySelector('#admin_panel').style.display = 'block';
     } else {
@@ -1372,14 +1372,6 @@ function renderBank(container){
     <hr style="border-color:#4a392a; margin:12px 0;"/>
     <button id="bk_signout" class="danger">🔓 Sign Out</button>
     ` : `<p class="small" style="color:var(--dim);">You are not signed in. Return to the main screen to sign in.</p>`}
-    <hr style="border-color:#4a392a; margin:16px 0;"/>
-    <h3 style="margin-top:0;">⚙️ Admin: Stable Data URL</h3>
-    <p class="small" style="color:var(--dim); margin-top:0;">Paste the /exec URL from your deployed Stable Data Apps Script. Only needs to be set once — it's saved in this browser.</p>
-    <div style="display:flex; gap:6px; align-items:flex-end;">
-      <div style="flex:1;"><label>Stable Data Script URL</label><input id="bk_stable_url" placeholder="https://script.google.com/macros/s/…/exec" value="${STABLE_URL||''}" /></div>
-      <button id="bk_save_url" style="margin-top:0; white-space:nowrap;">💾 Save</button>
-    </div>
-    <div id="bk_url_result" style="margin-top:6px;"></div>
   `;
   container.appendChild(card);
 
@@ -1402,16 +1394,6 @@ function renderBank(container){
       load();
     };
   }
-
-  card.querySelector('#bk_save_url').onclick = ()=>{
-    const url = card.querySelector('#bk_stable_url').value.trim();
-    const res = card.querySelector('#bk_url_result');
-    if(!url){ res.innerHTML = '<div class="result fail">Please paste a URL first.</div>'; return; }
-    if(!url.includes('script.google.com')){ res.innerHTML = '<div class="result fail">That does not look like a Google Apps Script URL.</div>'; return; }
-    STABLE_URL = url;
-    localStorage.setItem('equi_stable_url', url);
-    res.innerHTML = '<div class="result success">✅ Stable URL saved to this browser!</div>';
-  };
 }
 
 
