@@ -777,17 +777,21 @@ function renderLoginScreen(){
       <hr style="border-color:#4a392a; margin:16px 0;" />
       <div class="small" style="color:var(--dim); margin-bottom:6px;">First time here? Make sure you have a Buxx Bank account. Ask your group admin if you need help.</div>
       <hr style="border-color:#4a392a; margin:16px 0;" />
-      <details ${!stableSet ? 'open' : ''}>
-        <summary style="cursor:pointer; font-size:.85em; color:var(--dim);">⚙️ Admin: Configure Stable Data URL</summary>
-        <div style="margin-top:10px;">
-          <p class="small" style="color:var(--dim); margin-top:0;">Paste the /exec URL from your deployed Stable Data Apps Script. Only needs to be done once.</p>
-          ${stableSet ? `<div class="result success" style="margin-bottom:8px; font-size:.8em;">✅ Stable URL is configured.</div>` : `<div class="result fail" style="margin-bottom:8px; font-size:.8em;">⚠️ Not configured yet — players cannot log in until this is set.</div>`}
-          <label>Stable Data Script URL</label>
-          <input id="li_stable_url" placeholder="https://script.google.com/macros/s/…/exec" value="${STABLE_URL||''}" style="margin-bottom:6px;" />
-          <button id="li_save_url" class="secondary" style="width:100%; margin-top:4px;">💾 Save Stable URL</button>
-          <div id="li_url_result" style="margin-top:6px;"></div>
+      <div id="admin_lock">
+        <div style="display:flex; gap:6px; align-items:flex-end;">
+          <div style="flex:1;"><label style="font-size:.75em; color:var(--dim);">Admin Access</label><input id="li_admin_pass" type="password" placeholder="Admin passcode" /></div>
+          <button id="li_admin_unlock" class="secondary" style="margin-top:0; white-space:nowrap;">🔑 Unlock</button>
         </div>
-      </details>
+        <div id="li_admin_err" style="margin-top:4px;"></div>
+      </div>
+      <div id="admin_panel" style="display:none;">
+        <p class="small" style="color:var(--dim); margin-top:0;">Paste the /exec URL from your deployed Stable Data Apps Script. Only needs to be done once.</p>
+        ${stableSet ? `<div class="result success" style="margin-bottom:8px; font-size:.8em;">✅ Stable URL is configured.</div>` : `<div class="result fail" style="margin-bottom:8px; font-size:.8em;">⚠️ Not configured yet — players cannot log in until this is set.</div>`}
+        <label>Stable Data Script URL</label>
+        <input id="li_stable_url" placeholder="https://script.google.com/macros/s/…/exec" value="${STABLE_URL||''}" style="margin-bottom:6px;" />
+        <button id="li_save_url" class="secondary" style="width:100%; margin-top:4px;">💾 Save Stable URL</button>
+        <div id="li_url_result" style="margin-top:6px;"></div>
+      </div>
     </div>
   `;
   app.querySelector('#li_go').onclick = async () => {
@@ -809,6 +813,16 @@ function renderLoginScreen(){
     }
   };
   app.querySelector('#li_pass').onkeydown = (e) => { if(e.key==='Enter') app.querySelector('#li_go').click(); };
+  app.querySelector('#li_admin_unlock').onclick = () => {
+    const entered = app.querySelector('#li_admin_pass').value;
+    if(entered === 'Eqistories123'){
+      app.querySelector('#admin_lock').style.display = 'none';
+      app.querySelector('#admin_panel').style.display = 'block';
+    } else {
+      app.querySelector('#li_admin_err').innerHTML = '<div class="result fail" style="font-size:.8em;">Incorrect passcode.</div>';
+    }
+  };
+  app.querySelector('#li_admin_pass').onkeydown = (e) => { if(e.key==='Enter') app.querySelector('#li_admin_unlock').click(); };
   app.querySelector('#li_save_url').onclick = () => {
     const url = app.querySelector('#li_stable_url').value.trim();
     const res = app.querySelector('#li_url_result');
