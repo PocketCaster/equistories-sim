@@ -1,0 +1,1386 @@
+<div id="app"></div>
+<style>
+  html, body{ background:#1b1410; margin:0; padding:0; }
+  #app{
+    --bg:#1b1410; --panel:#241a14; --panel2:#2c2118; --accent:#c98a3a; --accent2:#7a9b6e;
+    --text:#f1e6d8; --dim:#b5a392; --danger:#b1473f; --warn:#c9a23a; --good:#7a9b6e;
+    font-family:'Georgia','Garamond',serif; color:var(--text); background:var(--bg);
+    padding:18px; border-radius:10px; max-width:980px; margin:0 auto;
+  }
+  #app h1,#app h2,#app h3{font-family:'Palatino Linotype',Georgia,serif; letter-spacing:.5px; margin:.2em 0;}
+  #app h1{color:var(--accent); border-bottom:2px solid var(--accent); padding-bottom:6px; font-size:1.5em;}
+  #app .tabs{display:flex; gap:6px; margin:12px 0 16px; flex-wrap:wrap;}
+  #app .tab{padding:7px 14px; background:var(--panel2); border:1px solid #4a392a; border-radius:6px 6px 0 0; cursor:pointer; color:var(--dim); font-size:.92em;}
+  #app .tab.active{background:var(--accent); color:#241a14; border-color:var(--accent); font-weight:bold;}
+  #app .card{background:var(--panel); border:1px solid #4a392a; border-radius:8px; padding:14px; margin-bottom:12px;}
+  #app .row{display:flex; gap:10px; flex-wrap:wrap;}
+  #app .row > div{flex:1; min-width:140px;}
+  #app label{font-size:.78em; color:var(--dim); display:block; margin-bottom:2px; text-transform:uppercase; letter-spacing:.5px;}
+  #app input, #app select, #app textarea{
+    width:100%; padding:6px 8px; background:#15100c; border:1px solid #4a392a; color:var(--text);
+    border-radius:5px; font-family:inherit; font-size:.95em; box-sizing:border-box;
+  }
+  #app button{
+    background:var(--accent); color:#231a12; border:none; padding:8px 14px; border-radius:6px;
+    cursor:pointer; font-weight:bold; font-family:inherit; font-size:.9em; margin-top:6px;
+  }
+  #app button.secondary{background:var(--panel2); color:var(--text); border:1px solid var(--accent);}
+  #app button.danger{background:var(--danger); color:#fff;}
+  #app button:hover{opacity:.88;}
+  #app .horse-card{background:var(--panel2); border:1px solid #4a392a; border-radius:8px; padding:12px; margin-bottom:10px;}
+  #app .horse-top-row{display:flex; gap:12px; align-items:flex-start;}
+  #app .horse-photo-wrap{display:flex; flex-direction:column; align-items:center; flex:none;}
+  #app .horse-photo{width:72px; height:72px; border-radius:8px; object-fit:cover; border:2px solid var(--accent); background:#15100c;}
+  #app .horse-photo-placeholder{display:flex; align-items:center; justify-content:center; font-size:2em; color:#4a392a;}
+  #app .artlog-panel{margin-top:10px; background:#15100c; border:1px solid #4a392a; border-radius:6px; padding:8px; max-height:260px; overflow-y:auto;}
+  #app .artlog-entry{padding:6px 0; border-bottom:1px dashed #2c2118;}
+  #app .artlog-entry:last-child{border-bottom:none;}
+  #app .artlog-link{color:var(--accent); text-decoration:underline;}
+  #app .horse-head{display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px;}
+  #app .horse-head .name{font-size:1.15em; color:var(--accent); font-weight:bold;}
+  #app .tag{display:inline-block; font-size:.72em; padding:2px 8px; border-radius:10px; margin-left:6px; background:#15100c; color:var(--dim); border:1px solid #4a392a;}
+  #app .tag.sick{background:var(--warn); color:#241a14;}
+  #app .tag.injured{background:var(--danger); color:#fff;}
+  #app .tag.healthy{background:var(--good); color:#15100c;}
+  #app .tag.retired{background:#5a5247; color:#f1e6d8; border-color:#8a7f6e;}
+  #app .tag.deceased{background:#0c0c0c; color:#8a7f6e; border-color:#3a3a3a;}
+  #app .statgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:8px; font-size:.85em;}
+  #app .statbar-wrap{display:flex; align-items:center; gap:6px;}
+  #app .statbar-bg{flex:1; height:7px; background:#15100c; border-radius:4px; overflow:hidden;}
+  #app .statbar-fill{height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent));}
+  #app .expbar-bg{height:9px; background:#15100c; border-radius:5px; overflow:hidden; margin-top:4px;}
+  #app .expbar-fill{height:100%; background:linear-gradient(90deg,#8a6fb0,#c98a3a);}
+  #app .small{font-size:.8em; color:var(--dim);}
+  #app .log{max-height:220px; overflow-y:auto; background:#15100c; border-radius:6px; padding:8px; font-size:.85em; border:1px solid #4a392a;}
+  #app .log div{margin-bottom:4px; padding-bottom:4px; border-bottom:1px dashed #2c2118;}
+  #app .prompt-box{background:#15100c; border:1px dashed var(--accent); border-radius:6px; padding:10px; margin-top:8px; font-style:italic; color:var(--text);}
+  #app .pill-select{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  #app .pill{padding:5px 10px; background:#15100c; border:1px solid #4a392a; border-radius:14px; font-size:.82em; cursor:pointer; color:var(--dim);}
+  #app .pill.active{background:var(--accent); color:#241a14; border-color:var(--accent);}
+  #app .result{padding:10px; border-radius:6px; margin-top:8px; font-weight:bold;}
+  #app .result.success{background:rgba(122,155,110,.2); border:1px solid var(--good); color:var(--good);}
+  #app .result.fail{background:rgba(177,71,63,.2); border:1px solid var(--danger); color:var(--danger);}
+  #app .daybox{display:flex; align-items:center; justify-content:space-between; background:var(--panel2); padding:12px 16px; border-radius:8px; margin-bottom:12px;}
+  #app .daybox .day{font-size:1.4em; color:var(--accent); font-weight:bold;}
+  #app select[multiple]{height:auto;}
+  #app .breedslots{display:flex; gap:6px; margin-top:6px;}
+  #app .slot{width:22px; height:22px; border-radius:50%; border:1px solid var(--accent); display:flex; align-items:center; justify-content:center; font-size:.7em;}
+  #app .slot.filled{background:var(--accent); color:#15100c;}
+  #app .empty-msg{color:var(--dim); font-style:italic; padding:20px; text-align:center;}
+</style>
+<script>
+(function(){
+
+const STATS = ["stamina","strength","scope","speed","handiness","boldness","balance","gaits","harmony"];
+const STAT_LABELS = {stamina:"Stamina",strength:"Strength",scope:"Scope",speed:"Speed",handiness:"Handiness",boldness:"Boldness",balance:"Balance",gaits:"Gaits",harmony:"Harmony"};
+
+const LEVEL_TABLE = {
+  1:{exp:0, bonus:0, slots:0},
+  2:{exp:50, bonus:2, slots:1},
+  3:{exp:100, bonus:2, slots:0},
+  4:{exp:150, bonus:3, slots:1},
+  5:{exp:200, bonus:3, slots:1},
+  6:{exp:250, bonus:3, slots:1},
+  7:{exp:300, bonus:4, slots:1},
+  8:{exp:500, bonus:4, slots:1},
+  9:{exp:750, bonus:4, slots:1},
+  10:{exp:1000, bonus:5, slots:2},
+};
+
+const TRAININGS = [
+  {id:"bonding", name:"Bonding", stats:{harmony:3}, prompt:"Draw or write your horse and handler sharing a quiet bonding moment — grooming, feeding, or just leaning in close together. Both subjects must be visible."},
+  {id:"lighthack", name:"Light Hack", stats:{balance:2,gaits:2,harmony:2}, prompt:"Depict a relaxed hack — a warmup, cool-down, or casual trail ride at walk/trot."},
+  {id:"transition", name:"Transition Work", stats:{harmony:3,gaits:3,strength:3,stamina:3}, prompt:"Show your horse mid-transition — walk to trot, trot to canter, or a smooth downward transition, ears soft and attentive."},
+  {id:"slope", name:"Working on a Slope", stats:{stamina:4,strength:4,balance:4}, prompt:"Draw your horse working a hillside — climbing or descending at the walk, trot, or canter."},
+  {id:"gallop", name:"Gallop", stats:{speed:4,stamina:4}, prompt:"Depict your horse at a full gallop — open track, round pen, or arena, mane and tail streaming."},
+  {id:"polework", name:"Pole Work", stats:{balance:3,strength:3,boldness:3}, prompt:"Show your horse stepping through a line of ground poles or cavaletti, focused and rhythmic."},
+  {id:"combinations", name:"Combinations (Loose)", stats:{boldness:4,strength:4,scope:4,balance:4}, prompt:"Depict your horse free-jumping a combination with no rider — pure focus on its own body and rhythm."},
+  {id:"coursework", name:"Course Work", stats:{scope:4,handiness:4,stamina:4,balance:4}, prompt:"Draw your horse jumping a full course, rider up, navigating turns between fences."},
+  {id:"flatwork", name:"Flat Work", stats:{strength:4,balance:4,gaits:4}, prompt:"Show your horse performing flatwork — figure eights, serpentines, leg-yields, or collected work."},
+  {id:"lunging", name:"Lunging / Groundwork", stats:{gaits:4,stamina:4,balance:4}, prompt:"Depict your horse working on the lunge line, building rhythm and suppleness."},
+  {id:"freejump", name:"Free Jumping", stats:{strength:3,scope:3,balance:3}, prompt:"Show your horse jumping loose through a chute or grid, no rider, finding its own balance over the fence."},
+  {id:"circling", name:"Circling", stats:{balance:2,strength:2,handiness:2}, prompt:"Draw your horse tracking a circle around a cone or barrel at trot or canter."},
+  {id:"grounddrive", name:"Ground Driving", stats:{strength:3,stamina:3,harmony:3}, prompt:"Depict your horse ground-driving with long lines, pulling a light cart or weighted object."},
+  {id:"desensitize", name:"Object Desensitization", stats:{boldness:3,harmony:3}, prompt:"Show your horse calmly facing something new and a little spooky — a tarp, a strange jump, an unfamiliar corner."},
+  {id:"equibreak", name:"Equibreak", stats:{harmony:3}, prompt:"Depict a breaking milestone appropriate to your horse's age — weaning, first halter, first tack, first rider, or first solo work under saddle.", foalOnly:true}
+];
+
+const DISCIPLINES = {
+  "Fox Hunting": ["boldness","stamina","harmony"],
+  "Hunter O/F & U/S": ["balance","gaits","harmony"],
+  "Handy Hunter / Hunter Derby": ["handiness","scope","balance"],
+  "Equitation Flat & O/F": ["harmony","balance","gaits"],
+  "Dressage": ["balance","gaits","strength"],
+  "Racing": ["stamina","speed","balance"],
+  "Steeplechase": ["stamina","speed","strength"],
+  "Show Jumping": ["boldness","scope","handiness"],
+  "Cross Country": ["stamina","boldness","speed"],
+  "Conformation / Liberty / Model": ["gaits","harmony","balance"],
+  "3-Day Eventing": ["balance","gaits","strength","boldness","scope","handiness","stamina","speed"],
+  "Forest Work / Log Pulling": ["stamina","strength","handiness"],
+  "Cart Driving": ["stamina","strength","boldness"],
+  "Working Equitation Trail": ["harmony","balance","strength"],
+  "Western Pleasure": ["harmony","balance","gaits"],
+  "Pole Bending / Barrels": ["speed","handiness","balance"],
+  "Cutting": ["harmony","boldness","handiness"],
+  "Reining": ["balance","gaits","strength"],
+};
+
+const ART_EXP = {
+  "Uncolored Headshot": 1, "Colored Headshot": 2, "Uncolored Fullbody": 3,
+  "Colored Fullbody": 4,
+};
+
+const LIT_EXP = {}; // legacy — word count now handled dynamically
+
+function calcLitExp(wordCount){
+  if(!wordCount || wordCount < 200) return 0;
+  return 2 + Math.floor((wordCount - 200) / 500) * 2;
+}
+
+const BONUS_EXP = {
+  "Background": 3, "Shading": 3, "Rider/Handler shown": 4, "Additional Creature (per)": 2,
+};
+
+const BANK_URL   = 'https://script.google.com/macros/s/AKfycby9WLxUPDAPg9EH5aTPATzTkHd8XeSKXuQ0WYqyQoHusEbws85qxwaML6cSovDod80/exec';
+// ← Paste your Stable Data script /exec URL here after deploying it:
+let STABLE_URL = localStorage.getItem('equi_stable_url') || '';
+
+const PLACEMENT_BUXX_AMOUNTS_LEGACY = { 1: 1000, 2: 750, 3: 500, 4: 250, 5: 100, 6: 50 };
+
+let state = { horses: [], day: 1, log: [], loaded: false };
+let bankAccount = { userId: '', password: '', linked: false };
+
+function uid(){ return 'h_' + Math.random().toString(36).slice(2,9); }
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function todayLabel(d){ return "Day " + d; }
+
+function newHorse(data){
+  let stats = {};
+  STATS.forEach(s=> stats[s] = 10);
+  return {
+    id: uid(), name: data.name, age: Number(data.age)||1, breed: data.breed,
+    stage: data.stage || (Number(data.age)>=3 ? "adult" : Number(data.age)>=2 ? "two-year-old" : Number(data.age)>=1 ? "yearling" : "foal"),
+    level: 1, exp: 0, stats: stats,
+    breedingSlots: 0, breedingFilled: 0,
+    status: "healthy", statusDays: 0,
+    daysOwned: 0,
+    eventsEnabled: data.eventsEnabled !== false,
+    profileImage: null,
+    artLog: [],
+    history: [],
+  };
+}
+
+function addLog(msg, dayOverride){
+  state.log.unshift({day: dayOverride !== undefined ? dayOverride : state.day, msg});
+  if(state.log.length>150) state.log.pop();
+}
+
+// ============================================
+// STABLE API — save/load to Google Sheets
+// ============================================
+
+function stableGas(payload){
+  return new Promise((resolve) => {
+    if(!STABLE_URL){ resolve({success:false, error:'No Stable Data URL configured.'}); return; }
+    const callbackName = 'stableCb_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    const url = STABLE_URL + '?callback=' + callbackName + '&data=' + encodeURIComponent(JSON.stringify(payload));
+    const script = document.createElement('script');
+    let done = false;
+    window[callbackName] = (data) => {
+      done = true; delete window[callbackName];
+      try{ document.head.removeChild(script); }catch(e){}
+      resolve(data);
+    };
+    script.onerror = () => {
+      if(!done){ done=true; delete window[callbackName]; try{document.head.removeChild(script);}catch(e){} resolve({success:false,error:'Network error reaching Stable Data script.'}); }
+    };
+    setTimeout(()=>{ if(!done){ done=true; delete window[callbackName]; try{document.head.removeChild(script);}catch(e){} resolve({success:false,error:'Request timed out.'}); } }, 15000);
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+// Save entire stable to Google Sheets (called after every action)
+async function save(){
+  if(!bankAccount.linked || !STABLE_URL){ return; }
+  const userId = bankAccount.userId;
+  // Save state (day + log)
+  await stableGas({ action:'saveStableState', userId, stateJson: JSON.stringify({day: state.day, log: state.log}) });
+  // Save each horse (without artLog — that's stored separately)
+  for(const h of state.horses){
+    const { artLog, ...horseData } = h;
+    await stableGas({ action:'saveHorse', userId, horseId: h.id, horseJson: JSON.stringify(horseData) });
+  }
+}
+
+// Save just one horse (faster — used after training/competing)
+async function saveHorse(horse){
+  if(!bankAccount.linked || !STABLE_URL) return;
+  const { artLog, ...horseData } = horse;
+  await stableGas({ action:'saveHorse', userId: bankAccount.userId, horseId: horse.id, horseJson: JSON.stringify(horseData) });
+}
+
+// Save a new art log entry for a horse
+async function saveArtEntry(horse, entry){
+  if(!bankAccount.linked || !STABLE_URL) return;
+  await stableGas({ action:'saveArtLogEntry', userId: bankAccount.userId, horseId: horse.id, entryJson: JSON.stringify(entry) });
+}
+
+async function saveBankAccount(){
+  try{
+    localStorage.setItem('equi_bank', JSON.stringify(bankAccount));
+  }catch(e){ console.error('bank save failed', e); }
+}
+
+async function load(){
+  // Always load bank credentials from localStorage first (they stay on this device)
+  try{
+    const b = localStorage.getItem('equi_bank');
+    if(b){ const bd = JSON.parse(b); bankAccount = { userId: bd.userId||'', password: bd.password||'', linked: bd.linked||false }; }
+  }catch(e){}
+
+  if(bankAccount.linked && STABLE_URL){
+    // Load from Google Sheets
+    await loadFromSheets();
+  } else {
+    // No account linked yet — show login screen
+    state.loaded = true;
+    state.horses = [];
+    state.day = 1;
+    state.log = [];
+  }
+  render();
+}
+
+async function loadFromSheets(){
+  const userId = bankAccount.userId;
+  // Load stable state (day + log)
+  const stateRes = await stableGas({ action:'loadStableState', userId });
+  if(stateRes.success && stateRes.data){
+    state.day = stateRes.data.day || 1;
+    state.log = stateRes.data.log || [];
+  } else {
+    state.day = 1; state.log = [];
+  }
+  // Load horses
+  const horsesRes = await stableGas({ action:'loadStable', userId });
+  if(horsesRes.success && horsesRes.data){
+    state.horses = horsesRes.data;
+  } else {
+    state.horses = [];
+  }
+  state.loaded = true;
+}
+
+function checkLevelUp(horse){
+  let leveled = false;
+  while(horse.level < 10 && horse.exp >= LEVEL_TABLE[horse.level+1].exp){
+    horse.level += 1;
+    const t = LEVEL_TABLE[horse.level];
+    STATS.forEach(s=> horse.stats[s] += t.bonus);
+    horse.breedingSlots += t.slots;
+    leveled = true;
+    addLog(`🎉 ${horse.name} reached Level ${horse.level}! +${t.bonus} to all stats` + (t.slots? `, +${t.slots} breeding slot(s) unlocked` : "") + ".");
+  }
+  return leveled;
+}
+
+const AILMENT_EVENTS = [
+  {text:"You notice nasal discharge running from {name}'s nose this morning — might be nothing, might not. Time to call the vet.", days:[3,6]},
+  {text:"{name} comes in covered in large, itchy welts — the flies have been merciless this week. You start an anti-itch regimen and keep an eye on the swelling.", days:[2,4]},
+  {text:"{name} is off their feed today, picking at hay without much interest. Vitals seem fine for now, but you're watching closely.", days:[2,5]},
+  {text:"You catch {name} coughing a few times during turnout. Could be dust, could be something more — the vet's on the way.", days:[3,6]},
+  {text:"{name}'s legs are puffy and warm to the touch this morning — stocking up, or something worse? Calling the vet to be safe.", days:[2,5]},
+  {text:"{name} had loose, watery stool overnight. You're pulling grain and watching hydration closely while you wait to hear from the vet.", days:[2,4]},
+  {text:"{name} seems uncharacteristically dull and quiet this morning, ears low, barely interested in breakfast. Something's not right.", days:[2,5]},
+  {text:"{name} is sweating heavily despite the mild weather and breathing a little quick. You call the vet immediately, worried about colic.", days:[3,7]},
+  {text:"You find a small, weeping sore at the corner of {name}'s mouth — could be a vitamin deficiency or something else. Vet visit booked.", days:[2,4]},
+  {text:"{name} has a slight fever on the thermometer this morning, just under 102°F. Not alarming yet, but worth a vet call and a few quiet days.", days:[2,5]},
+  {text:"{name}'s eye looks irritated and is watering steadily — could be a scratch on the cornea or just dust. The vet wants to see it today.", days:[3,6]},
+  {text:"You notice {name} grinding their teeth and pawing after meals — possible ulcers. Time to adjust the diet and call the vet.", days:[4,7]},
+];
+
+const INJURY_EVENTS = [
+  {text:"{name} comes in from the pasture this morning with a noticeable limp. You can't pinpoint the leg by eye alone — time to call the vet for a proper diagnosis.", days:[5,10]},
+  {text:"You find {name} with a swollen fetlock, warm and tender when you run your hand down the leg. The vet's coming out to take a look.", days:[5,9]},
+  {text:"{name} is sore-footed on the gravel, stepping carefully and reluctant to put full weight down. Could be a bruise, could be an abscess brewing — hoof testers needed.", days:[4,8]},
+  {text:"You discover a deep gash along {name}'s cannon bone, likely from a run-in with the fence line. It's bleeding more than you'd like — stitches are probably in order.", days:[6,10]},
+  {text:"{name} pulled up short mid-gallop in the field, favoring a front leg. No obvious wound, but the lameness is plain to see.", days:[5,9]},
+  {text:"You notice {name} holding their head a little low and reluctant to turn sharply — could be a stiff neck, could be something in the back. The vet's been called.", days:[4,7]},
+  {text:"{name} has a puncture wound on their chest, small but deep — possibly from a stray nail or branch. You're cleaning it out and starting antibiotics on the vet's advice.", days:[5,8]},
+  {text:"You find {name} standing oddly in the field, weight shifted off a hind leg, and they flinch hard when you press just above the hock.", days:[5,9]},
+];
+
+function advanceDay(){
+  const endingDay = state.day; // the day that is wrapping up — events get logged here
+  const logCountBefore = state.log.length;
+  state.horses.forEach(h=>{
+    if(h.status === "deceased") return;
+    h.daysOwned += 1;
+    if(h.status === "retired"){
+      return; // retired horses don't generate individual daily noise
+    }
+    if(h.status !== "healthy"){
+      h.statusDays -= 1;
+      if(h.statusDays <= 0){
+        addLog(`✅ ${h.name} has fully recovered from being ${h.status}.`, endingDay);
+        h.status = "healthy"; h.statusDays = 0;
+      } else {
+        addLog(`🩺 ${h.name} is still recovering — ${h.statusDays} day(s) left before they're cleared for work.`, endingDay);
+      }
+    } else if(h.eventsEnabled === false){
+      // health risk disabled for this horse — skip sickness/injury/death rolls entirely
+    } else {
+      const roll = Math.random();
+      if(roll < 0.004){
+        const severe = maybeSevereEvent(h, "turnout", 1); // already passed the outer roll, force trigger
+        if(severe){
+          addLog(`💥 ${severe.event.name}: ${severe.text}`, endingDay);
+          addLog(severe.died ? `🖤 Despite every effort, ${h.name} did not survive. ${severe.event.outcomeNote}` : `🚫 ${h.name} is now permanently retired. ${severe.event.outcomeNote}`, endingDay);
+        }
+      } else if(roll < 0.03){
+        const a = pick(AILMENT_EVENTS);
+        h.status = "sick"; h.statusDays = rand(a.days[0], a.days[1]);
+        addLog(`🤒 ${a.text.replaceAll("{name}", h.name)} Expect about ${h.statusDays} day(s) before they're back to normal.`, endingDay);
+      } else if(roll < 0.05){
+        const inj = pick(INJURY_EVENTS);
+        h.status = "injured"; h.statusDays = rand(inj.days[0], inj.days[1]);
+        addLog(`🩹 ${inj.text.replaceAll("{name}", h.name)} Out for roughly ${h.statusDays} day(s).`, endingDay);
+      }
+      // otherwise: a quiet day for this horse — no individual log entry
+    }
+    // birthday / aging every 365 days
+    if(h.daysOwned > 0 && h.daysOwned % 365 === 0){
+      h.age += 1;
+      addLog(`🎂 ${h.name} has turned ${h.age} years old.`, endingDay);
+    }
+  });
+  // if nothing horse-specific happened today, log one generic end-of-day line
+  if(state.log.length === logCountBefore){
+    addLog(`🌙 ${pick(GENERIC_DAY_BEATS)}`, endingDay);
+  }
+  state.day += 1;
+  save();
+}
+
+const GENERIC_DAY_BEATS = [
+  "End of day — the barn settles in for the night, the soft sound of horses shifting in their stalls and munching hay.",
+  "A quiet, uneventful day at the stable. Feed, turnout, grooming — the steady rhythm that keeps everything running.",
+  "Nothing remarkable today. Chores get done, the horses are content, and the barn lights click off one by one.",
+  "A calm day all around — buckets scrubbed, stalls mucked, fences checked. Just the ordinary work of keeping a stable running.",
+  "The whole yard is peaceful tonight. Every horse fed, watered, and settled for the evening.",
+  "A slow, easy day. The kind where nothing goes wrong and you almost forget to appreciate it.",
+  "Routine chores, routine weather, routine day. Sometimes that's exactly what a stable needs.",
+  "The horses graze quietly as the sun sets, tails swishing, completely unbothered by the world.",
+];
+
+const STORY_BEATS = {
+  breakthrough: [
+    "Partway through, something just *clicks* — {name} suddenly nails the exercise with a softness that wasn't there before. Their ears flick back toward their handler like they're sharing the moment.",
+    "{name} surprises everyone by pushing past their usual limit, finishing stronger and more relaxed than expected. A real turning point.",
+    "There's a breath where {name} stops fighting the work and just... gives. The kind of quiet trust that takes months to build, happening right now.",
+    "{name} finds a rhythm mid-session that looks almost effortless — like they were born knowing how to do this.",
+    "Something shifts in {name}'s confidence today. They tackle the hardest part of the exercise like it's nothing, and you can practically see them grow prouder of themselves.",
+  ],
+  spook: [
+    "Halfway through, a sound off in the distance sends {name} sideways in a sudden spook — ears pinned, body coiled, before catching themselves and standing, trembling, waiting to see if it's safe.",
+    "{name} catches sight of something out of the corner of their eye and bolts a few strides before being brought back, blowing hard, eyes wide and rimmed white.",
+    "A gust of wind kicks up dust and {name} jumps clean off all four feet, snorting and dancing sideways before settling back to work.",
+    "Out of nowhere {name} plants their feet and refuses to move another inch, staring hard at something only they can see, nostrils flared.",
+    "{name} startles at their own shadow stretching long across the arena, leaping away before huffing in obvious embarrassment.",
+  ],
+  mishap: [
+    "{name} misjudges a stride and stumbles hard, catching themselves at the last second — but not without a visible flinch and a slight hitch in their step afterward.",
+    "A bad step on uneven ground has {name} pulling up short, favoring a leg just enough to call the session early and keep an eye on it.",
+    "{name} overexerts pushing through the exercise and ends the session breathing harder than they should, legs trembling with fatigue.",
+    "A miscommunication mid-movement has {name} twisting awkwardly, and though they shake it off, there's a stiffness left behind.",
+    "{name} catches a hind foot on something underfoot and comes up lame for a few strides before working out of it — worth keeping an eye on.",
+  ],
+  neutral: [
+    "A solid, workmanlike session — nothing dramatic, just {name} putting in honest effort and coming away a little better for it.",
+    "{name} stays focused and steady throughout, the kind of quiet, unremarkable progress that adds up over time.",
+    "Today is calm and uneventful. {name} works through the exercise without much fuss, ears relaxed, tail loose.",
+    "{name} seems a little distracted at first, but settles into a comfortable groove by the second half of the session.",
+    "Nothing flashy today — just {name} and their handler, putting in the quiet repetitions that build real partnership.",
+  ],
+};
+
+function pick(arr){ return arr[rand(0,arr.length-1)]; }
+
+function rollStoryBeat(horse){
+  const roll = Math.random();
+  let category;
+  if(roll < 0.18) category = "breakthrough";
+  else if(roll < 0.33) category = "spook";
+  else if(roll < 0.43) category = "mishap";
+  else category = "neutral";
+  let text = pick(STORY_BEATS[category]).replaceAll("{name}", horse.name);
+  return {category, text};
+}
+
+const SEVERE_EVENTS = [
+  {
+    id: "fracture", name: "Catastrophic Fracture", contexts: ["training","competition","turnout"],
+    text: [
+      "{name} comes down wrong off a stride and there's an audible crack — they pull up three-legged lame instantly, refusing to bear weight. The vet's verdict after X-rays: a fractured cannon bone. Surgery is possible but the prognosis for return to work is grim.",
+      "A misstep on the turn sends {name} crashing down hard. They scramble back up, but the leg won't hold weight — a fractured splint bone confirmed on imaging, with a long road of stall rest ahead and no guarantee of soundness after.",
+      "{name} catches a leg awkwardly and goes down in a tangle. When they get up, the limb hangs wrong. The vet confirms a pastern fracture — the kind of injury that ends careers more often than it ends lives, but it will end this one.",
+    ],
+    deathChance: 0.15,
+    outcomeNote: "Retired from training and competition permanently. With careful management they may still live comfortably and could be considered for pasture/breeding duty depending on the fracture site.",
+  },
+  {
+    id: "fall", name: "Bad Fall Over a Jump", contexts: ["training","competition"],
+    text: [
+      "{name} clips the top rail with a front leg mid-air and rotates, slamming down hard on their shoulder with the rider scrambling clear just in time. They lie still for a few terrifying seconds before staggering up, clearly shaken and unsound.",
+      "Misjudging the takeoff, {name} ducks out late and goes down hard into the base of the fence, somersaulting partway. It's the kind of fall that makes the whole arena go silent.",
+      "{name} loses their hind end on landing and crashes down awkwardly, head and neck twisting hard against the ground before they scramble upright, trembling and reluctant to move.",
+    ],
+    deathChance: 0.2,
+    outcomeNote: "Retired from jumping disciplines. Depending on what the vet finds (soft tissue, neurological, or orthopedic), they may still be sound enough for light flatwork, trail, or breeding — but their competitive jumping career is over.",
+  },
+  {
+    id: "laminitis", name: "Laminitis", contexts: ["turnout"],
+    text: [
+      "{name} is found at the gate this morning shifting weight uneasily from foot to foot, reluctant to move, with heat radiating off both front hooves. The vet's diagnosis is laminitis — the coffin bone may already be rotating. It's a slow, painful, and serious condition with no fast fix.",
+      "{name} won't come in from the field, standing in the classic 'sawhorse' stance with front feet stretched out ahead of them to relieve the pressure. Laminitis is confirmed, likely triggered by rich spring grass — the next 48 hours are critical.",
+    ],
+    deathChance: 0.18,
+    outcomeNote: "A long, carefully managed recovery lies ahead — strict diet, hoof support, and stall rest for months. Some horses recover enough for light work; many never return to full competitive soundness and are retired to a managed, low-stress life.",
+  },
+  {
+    id: "ehv1", name: "EHV-1 (Equine Herpesvirus Myeloencephalopathy)", contexts: ["turnout"],
+    text: [
+      "{name} spikes a sudden high fever overnight and by morning is stumbling, hind end weaving like they can't quite feel where their feet are. The vet isolates them immediately — it's the neurological strain of EHV-1, and the whole barn is now under quarantine.",
+      "What looked like a mild cold in {name} two days ago has taken a frightening turn — ataxia, knuckling at the fetlocks, dribbling urine. EHV-1 myeloencephalopathy is confirmed. Biosecurity protocols go into effect across the entire property.",
+    ],
+    deathChance: 0.3,
+    outcomeNote: "Survivors of the neurological strain often carry permanent deficits — incoordination, weakness, or reduced stamina — that can end a performance career even after the virus itself clears. Quarantine affects the whole stable for weeks.",
+  },
+  {
+    id: "colic_surgery", name: "Severe Colic Requiring Surgery", contexts: ["turnout"],
+    text: [
+      "{name} is found rolling and thrashing in obvious distress, pawing at the ground and looking back at their flank. The vet's exam points to a twisted intestine — there's no time to wait. It's an emergency trailer ride to the surgical hospital.",
+      "Sweating, pulse racing, refusing to eat, and biting at their own sides — {name}'s colic doesn't resolve with the usual treatment. Surgery is the only option, and even then the odds are far from guaranteed.",
+    ],
+    deathChance: 0.35,
+    outcomeNote: "Colic surgery survivors need months of careful re-feeding and limited work to heal. Many return to a useful life, but the physical toll — and the financial one — is enormous, and some never fully regain their old stamina.",
+  },
+];
+
+function maybeSevereEvent(horse, context, chance){
+  if(Math.random() >= chance) return null;
+  const pool = SEVERE_EVENTS.filter(e=> e.contexts.includes(context));
+  if(pool.length === 0) return null;
+  const event = pick(pool);
+  const text = pick(event.text).replaceAll("{name}", horse.name);
+  const died = Math.random() < event.deathChance;
+  if(died){
+    horse.status = "deceased";
+    horse.statusDays = 0;
+  } else {
+    horse.status = "retired";
+    horse.statusDays = 0;
+  }
+  horse.retired = true;
+  return {event, text, died};
+}
+
+const IDLE_DAY_BEATS = [
+  "{name} spends the afternoon dozing in a sunny patch of the paddock, lower lip drooping, utterly at peace.",
+  "{name} gets into a play-fight with a pasture mate, both of them squealing and striking out before tearing off across the field.",
+  "{name} rolls dramatically in the dirt the second they're turned out, coming up looking absolutely filthy and pleased with themselves.",
+  "{name} spends a solid ten minutes scratching an itch against the fence post with an expression of pure bliss.",
+  "{name} stands at the gate watching the driveway, ears pricked, clearly hoping someone's about to bring treats.",
+  "{name} and their favorite herdmate groom each other along the withers, completely zoned out, eyes half-closed.",
+  "A new horse on the property catches {name}'s attention and there's a long, dramatic bout of squealing and posturing at the fence line before everyone loses interest.",
+  "{name} discovers a particularly good patch of grass and refuses to move from it for the rest of turnout.",
+  "It rains most of the day and {name} stands under the run-in shelter looking deeply unimpressed with the weather.",
+  "{name} spooks at a plastic bag blowing across the paddock, snorts hard, then walks back over to investigate it themselves.",
+  "{name} naps lying flat out in the sun — the kind of deep, trusting sleep that only happens in a herd that feels safe.",
+  "{name} follows their handler around at feeding time like a oversized dog, clearly angling for an extra scoop.",
+];
+
+function rollIdleBeat(horse){
+  return pick(IDLE_DAY_BEATS).replaceAll("{name}", horse.name);
+}
+
+
+function applyTraining(horseId, trainingId, artType, litWordCount, bonusKeys, link, trainingId2){
+  const h = state.horses.find(x=>x.id===horseId);
+  const t = TRAININGS.find(x=>x.id===trainingId);
+  const t2 = trainingId2 ? TRAININGS.find(x=>x.id===trainingId2) : null;
+  if(!h || !t) return null;
+
+  const severe = h.eventsEnabled !== false ? maybeSevereEvent(h, "training", 0.008) : null;
+  if(severe){
+    Object.entries(t.stats).forEach(([stat,val])=>{ h.stats[stat] += Math.ceil(val/2); });
+    addLog(`💥 ${severe.event.name}: ${severe.text}`);
+    addLog(severe.died ? `🖤 Despite every effort, ${h.name} did not survive. ${severe.event.outcomeNote}` : `🚫 ${h.name} is now permanently retired. ${severe.event.outcomeNote}`);
+    save(); render();
+    return {beat:{category:"severe", text:severe.text}, severe};
+  }
+
+  const beat = rollStoryBeat(h);
+  let bonusExp = 0, bonusStat = null, injured = false;
+  Object.entries(t.stats).forEach(([stat,val])=>{ h.stats[stat] += val; });
+  if(t2) Object.entries(t2.stats).forEach(([stat,val])=>{ h.stats[stat] += val; });
+  if(beat.category === "breakthrough"){
+    bonusExp = rand(1,3);
+    const statKeys = Object.keys(t2 ? allStats : t.stats);
+    bonusStat = statKeys[rand(0,statKeys.length-1)];
+    h.stats[bonusStat] += 1;
+    h.exp += bonusExp;
+  } else if(beat.category === "mishap" && h.eventsEnabled !== false){
+    if(Math.random() < 0.35){
+      injured = true;
+      h.status = "injured"; h.statusDays = rand(2,5);
+    }
+  }
+  let expGain = 0;
+  let sources = [];
+  if(artType && ART_EXP[artType]){ expGain += ART_EXP[artType]; sources.push(`${artType} (+${ART_EXP[artType]})`); }
+  const litExp = calcLitExp(litWordCount);
+  if(litExp > 0){ expGain += litExp; sources.push(`Literature (${litWordCount} words) (+${litExp})`); }
+  (bonusKeys||[]).forEach(k=>{
+    if(BONUS_EXP[k]){ expGain += BONUS_EXP[k]; sources.push(`${k} (+${BONUS_EXP[k]})`); }
+  });
+  h.exp += expGain;
+  const allStats = {...t.stats};
+  if(t2) Object.entries(t2.stats).forEach(([s,v])=>{ allStats[s] = (allStats[s]||0) + v; });
+  const statsStr = Object.entries(allStats).map(([s,v])=>`+${v} ${STAT_LABELS[s]}`).join(", ");
+  const trainingLabel = t2 ? `${t.name} + ${t2.name}` : t.name;
+  addLog(`🎨 ${h.name} completed "${trainingLabel}" training (${statsStr})` + (expGain? ` and earned +${expGain} EXP total — ${sources.join(", ")}.` : "."));
+  addLog(`${beat.category==='breakthrough'?'✨':beat.category==='spook'?'😨':beat.category==='mishap'?'⚠️':'📝'} ${beat.text}` + (bonusStat? ` (Breakthrough bonus: +1 ${STAT_LABELS[bonusStat]}, +${bonusExp} EXP)` : "") + (injured? ` (${h.name} is now injured — out ${h.statusDays} day(s).)` : ""));
+  const trainingEntry = {
+    day: state.day, type: "training", label: trainingLabel,
+    art: artType || null, lit: litWordCount ? `Literature (${litWordCount} words)` : null, bonuses: bonusKeys||[],
+    exp: expGain, link: link || null,
+  };
+  h.artLog.unshift(trainingEntry);
+  checkLevelUp(h);
+  saveHorse(h);
+  saveArtEntry(h, trainingEntry);
+  save();
+  render();
+  return {beat, bonusStat, bonusExp, injured, expGain};
+}
+
+function runCompetition(horseId, discipline, difficulty, artType, litWordCount, bonusKeys, link){
+  const h = state.horses.find(x=>x.id===horseId);
+  if(!h) return null;
+
+  const severe = h.eventsEnabled !== false ? maybeSevereEvent(h, "competition", 0.012) : null;
+  if(severe){
+    addLog(`💥 ${severe.event.name}: ${severe.text}`);
+    addLog(severe.died ? `🖤 Despite every effort, ${h.name} did not survive. ${severe.event.outcomeNote}` : `🚫 ${h.name} is now permanently retired. ${severe.event.outcomeNote}`);
+    save(); render();
+    return {success:false, severe, expGain:0};
+  }
+
+  const relevant = DISCIPLINES[discipline];
+  const avg = relevant.reduce((a,s)=>a+h.stats[s],0) / relevant.length;
+  const diffVal = {Local:10, Regional:20, National:35, Elite:50}[difficulty];
+  let successChance = clamp(50 + (avg - diffVal) * 2, 5, 95);
+  const roll = rand(1,100);
+  const success = roll <= successChance;
+  let placement = null, expGain = 1; // entry exp
+  let injured = false;
+  if(success){
+    const margin = successChance - roll; // how comfortably they "made" it
+    const pRoll = rand(1,100) - margin*0.5;
+    if(pRoll < 20) placement = 1;
+    else if(pRoll < 45) placement = 2;
+    else if(pRoll < 70) placement = 3;
+    else if(pRoll < 82) placement = 4;
+    else if(pRoll < 92) placement = 5;
+    else placement = 6;
+    const placeExp = {1:4,2:3,3:2}[placement] || 1;
+    expGain += placeExp;
+  } else {
+    if(h.eventsEnabled !== false && Math.random() < 0.22){
+      injured = true;
+      h.status = "injured"; h.statusDays = rand(4,9);
+    }
+  }
+  let sources = [];
+  if(artType && ART_EXP[artType]){ expGain += ART_EXP[artType]; sources.push(`${artType} (+${ART_EXP[artType]})`); }
+  const litExp = calcLitExp(litWordCount);
+  if(litExp > 0){ expGain += litExp; sources.push(`Literature (${litWordCount} words) (+${litExp})`); }
+  (bonusKeys||[]).forEach(k=>{
+    if(BONUS_EXP[k]){ expGain += BONUS_EXP[k]; sources.push(`${k} (+${BONUS_EXP[k]})`); }
+  });
+  h.exp += expGain;
+  const leveled = checkLevelUp(h);
+  const resultMsg = success
+    ? `🏆 ${h.name} competed in ${discipline} (${difficulty}) and placed ${placement===1?"1st":placement===2?"2nd":placement===3?"3rd":placement===4?"4th":placement===5?"5th":"6th"}! (+${expGain} EXP total${sources.length? " — "+sources.join(", "):""})`
+    : `❌ ${h.name} did not place in ${discipline} (${difficulty}).` + (injured? ` They picked up a minor injury during the run (out ${h.statusDays} days).` : "") + ` (+${expGain} EXP total${sources.length? " — "+sources.join(", "):""})`;
+  addLog(resultMsg);
+  const compEntry = {
+    day: state.day, type: "competition", label: `${discipline} (${difficulty})`,
+    art: artType || null, lit: litWordCount ? `Literature (${litWordCount} words)` : null, bonuses: bonusKeys||[],
+    exp: expGain, link: link || null, placement: success ? placement : null,
+  };
+  h.artLog.unshift(compEntry);
+  saveArtEntry(h, compEntry);
+  save();
+  render();
+  return {success, placement, injured, successChance, roll, avg, expGain};
+}
+
+function deleteHorse(id){
+  if(!confirm('Remove this horse from your roster? This cannot be undone.')) return;
+  const h = state.horses.find(x=>x.id===id);
+  state.horses = state.horses.filter(x=>x.id!==id);
+  if(h) addLog(`${h.name} has left the stable roster.`);
+  if(bankAccount.linked && STABLE_URL){
+    stableGas({action:'deleteHorse', userId:bankAccount.userId, horseId:id});
+  }
+  save();
+  render();
+}
+
+function toggleEvents(id){
+  const h = state.horses.find(x=>x.id===id);
+  if(!h) return;
+  h.eventsEnabled = !(h.eventsEnabled !== false); // flip, treating undefined as true
+  addLog(`🛡️ Health risk events ${h.eventsEnabled ? "re-enabled" : "disabled"} for ${h.name}.`);
+  save();
+  render();
+}
+
+// ---------- RENDER ----------
+let activeTab = "roster";
+let expandedArtLogs = new Set();
+let trainSelection = {horseId:null, trainingId:null};
+let compSelection = {horseId:null, discipline:null, difficulty:"Local"};
+let lastCompResult = null;
+
+function el(tag, cls, html){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(html !== undefined) e.innerHTML = html;
+  return e;
+}
+
+function statBarsHTML(h){
+  return `<div class="statgrid">` + STATS.map(s=>{
+    const v = h.stats[s];
+    const pct = clamp((v/40)*100,2,100);
+    return `<div><div class="small">${STAT_LABELS[s]}: <b>${v}</b></div>
+      <div class="statbar-wrap"><div class="statbar-bg"><div class="statbar-fill" style="width:${pct}%"></div></div></div></div>`;
+  }).join("") + `</div>`;
+}
+
+function artLogEntryHTML(entry){
+  const icon = entry.type === "training" ? "🎨" : "🏆";
+  const parts = [];
+  if(entry.art) parts.push(entry.art);
+  if(entry.lit) parts.push(entry.lit);
+  if(entry.bonuses && entry.bonuses.length) parts.push(...entry.bonuses);
+  const detail = parts.length ? parts.join(" · ") : "(stats only, no art/lit logged)";
+  const placementStr = entry.placement ? ` — placed ${entry.placement===1?"1st":entry.placement===2?"2nd":entry.placement===3?"3rd":entry.placement===4?"4th":entry.placement===5?"5th":"6th"}` : "";
+  const linkHtml = entry.link ? ` <a href="${entry.link}" target="_blank" rel="noopener" class="artlog-link">🔗 View</a>` : "";
+  return `<div class="artlog-entry">
+    <b>Day ${entry.day}</b> · ${icon} ${entry.label}${placementStr} · +${entry.exp} EXP
+    <div class="small">${detail}${linkHtml}</div>
+  </div>`;
+}
+
+function horseCardHTML(h){
+  const nextLevelExp = h.level < 10 ? LEVEL_TABLE[h.level+1].exp : LEVEL_TABLE[10].exp;
+  const prevExp = LEVEL_TABLE[h.level].exp;
+  const span = Math.max(1, nextLevelExp - prevExp);
+  const pct = h.level>=10 ? 100 : clamp(((h.exp-prevExp)/span)*100,0,100);
+  const statusTag = h.status==="healthy" ? `<span class="tag healthy">healthy</span>`
+    : h.status==="retired" ? `<span class="tag retired">🚫 retired</span>`
+    : h.status==="deceased" ? `<span class="tag deceased">🖤 deceased</span>`
+    : `<span class="tag ${h.status}">${h.status} · ${h.statusDays}d left</span>`;
+  const shieldTag = h.eventsEnabled===false ? `<span class="tag" style="background:#3a5a4a; color:#cdebd9; border-color:#5a8a6e;">🛡️ Protected</span>` : "";
+  let slots = "";
+  for(let i=0;i<h.breedingSlots;i++) slots += `<div class="slot ${i<h.breedingFilled?'filled':''}">${i+1}</div>`;
+  if(h.breedingSlots===0) slots = `<span class="small">none unlocked yet</span>`;
+  const photoHtml = h.profileImage
+    ? `<img src="${h.profileImage}" class="horse-photo" />`
+    : `<div class="horse-photo horse-photo-placeholder">🐴</div>`;
+  const artLogOpen = expandedArtLogs.has(h.id);
+  const artLogHtml = artLogOpen
+    ? `<div class="artlog-panel">${h.artLog.length ? h.artLog.map(artLogEntryHTML).join("") : '<div class="small">No art or literature logged yet — link some when you train or compete!</div>'}</div>`
+    : "";
+  const refLinkHtml = h.referenceLink
+    ? `<div class="small" style="margin-top:4px;"><a href="${h.referenceLink}" target="_blank" rel="noopener" class="artlog-link">🔗 View Reference Sheet</a></div>`
+    : "";
+  const refImgHtml = h.referenceImage
+    ? `<div style="margin-top:8px;"><div class="small" style="margin-bottom:4px;">📋 Registration / Reference Sheet${refLinkHtml ? " · " + refLinkHtml.trim() : ""}</div><img src="${h.referenceImage}" style="max-width:100%; max-height:220px; border-radius:6px; border:1px solid #4a392a; object-fit:contain;" /><div style="margin-top:6px; display:flex; gap:6px; align-items:center;"><input type="text" data-ref-link-input="${h.id}" placeholder="Paste link to ref sheet (DeviantArt, Toyhouse…)" value="${h.referenceLink||""}" style="flex:1; font-size:.82em;" /><button class="secondary" data-act="save-ref-link" data-id="${h.id}" style="margin-top:0; font-size:.78em; padding:4px 8px; white-space:nowrap;">💾 Save Link</button></div></div>`
+    : `<div class="small" style="margin-top:8px; color:var(--dim);">📋 No registration / reference sheet uploaded yet.</div>`;
+  return `
+  <div class="horse-card">
+    <div class="horse-top-row">
+      <div class="horse-photo-wrap">
+        ${photoHtml}
+        <input type="file" accept="image/*" data-photo-input="${h.id}" style="display:none;" />
+        <button class="secondary" data-act="upload-photo" data-id="${h.id}" style="margin-top:4px; font-size:.75em; padding:4px 8px;">📷 ${h.profileImage?'Change':'Upload'}</button>
+      </div>
+      <div style="flex:1;">
+        <div class="horse-head">
+          <div><span class="name">${h.name}</span> ${statusTag} ${shieldTag} <span class="tag">Lvl ${h.level}</span></div>
+          <div class="small">${h.breed} · Age ${h.age} (${h.stage})</div>
+        </div>
+        <div class="small">EXP: ${h.exp} / ${h.level<10?LEVEL_TABLE[h.level+1].exp:LEVEL_TABLE[10].exp+' (max)'}</div>
+        <div class="expbar-bg"><div class="expbar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>
+    ${statBarsHTML(h)}
+    <div class="small" style="margin-top:8px;">Breeding Slots:</div>
+    <div class="breedslots">${slots}</div>
+    <div class="row" style="margin-top:8px; gap:6px;">
+      <button class="secondary" data-act="toggle-events" data-id="${h.id}">${h.eventsEnabled===false ? '🛡️ Re-enable health risk' : '🛡️ Disable sickness/injury/death'}</button>
+      <button class="secondary" data-act="toggle-artlog" data-id="${h.id}">📖 ${artLogOpen ? 'Hide' : 'Show'} Art & Training Log (${h.artLog.length})</button>
+      <button class="secondary" data-act="upload-ref" data-id="${h.id}">📋 ${h.referenceImage?'Change':'Upload'} Ref Sheet</button>
+      <input type="file" accept="image/*" data-ref-input="${h.id}" style="display:none;" />
+      <button class="secondary danger" data-act="del" data-id="${h.id}">Remove from roster</button>
+    </div>
+    ${refImgHtml}
+    ${artLogHtml}
+  </div>`;
+}
+
+function renderLoginScreen(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1>🐴 EquiStories Stable Manager</h1>
+    <div class="card" style="max-width:460px; margin:40px auto;">
+      <h3 style="margin-top:0;">Welcome! Sign in to your stable</h3>
+      <p class="small" style="color:var(--dim);">Use the same User ID and password as your Buxx Bank account.</p>
+      <div style="margin-bottom:10px;">
+        <label>Bank User ID</label>
+        <input id="li_user" placeholder="Your userId" autocomplete="username" />
+      </div>
+      <div style="margin-bottom:10px;">
+        <label>Password</label>
+        <input id="li_pass" type="password" placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <button id="li_go" style="width:100%;">🔐 Sign In</button>
+      <div id="li_result" style="margin-top:8px;"></div>
+      <hr style="border-color:#4a392a; margin:16px 0;" />
+      <div class="small" style="color:var(--dim); margin-bottom:6px;">First time here? Make sure you have a Buxx Bank account. Ask your group admin if you need help.</div>
+    </div>
+  `;
+  app.querySelector('#li_go').onclick = async () => {
+    const userId   = app.querySelector('#li_user').value.trim();
+    const password = app.querySelector('#li_pass').value.trim();
+    const res      = app.querySelector('#li_result');
+    if(!userId || !password){ res.innerHTML = '<div class="result fail">Please enter both your User ID and password.</div>'; return; }
+    if(!STABLE_URL){ res.innerHTML = '<div class="result fail">⚠️ The Stable Data URL has not been configured yet. Ask your admin to set it up.</div>'; return; }
+    res.innerHTML = '<div class="small" style="color:var(--dim);">Signing in…</div>';
+    // Verify against bank
+    const data = await gasPost({action:'loginPlayer', userId, password});
+    if(data && data.success){
+      bankAccount = {userId, password, linked:true};
+      await saveBankAccount();
+      res.innerHTML = `<div class="result success">✅ Welcome, ${data.data.displayName}! Loading your stable…</div>`;
+      await loadFromSheets();
+      render();
+    } else {
+      res.innerHTML = `<div class="result fail">❌ ${(data && data.error)||'Login failed — check your User ID and password.'}</div>`;
+    }
+  };
+  // Allow Enter key
+  app.querySelector('#li_pass').onkeydown = (e) => { if(e.key==='Enter') app.querySelector('#li_go').click(); };
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!state.loaded){ app.innerHTML = '<div style="padding:20px; color:var(--dim);">Loading…</div>'; return; }
+  if(!bankAccount.linked){
+    renderLoginScreen();
+    return;
+  }
+  app.innerHTML = `
+    <h1>🐴 EquiStories Stable Manager</h1>
+    <div class="daybox">
+      <div>Welcome back. <span class="small">${state.horses.length} horse(s) in the stable.</span></div>
+      <div><span class="day">${todayLabel(state.day)}</span></div>
+    </div>
+    <div class="tabs">
+      ${["roster","train","compete","log","bank"].map(t=>`<div class="tab ${activeTab===t?'active':''}" data-tab="${t}">${t==='roster'?'Stable Roster':t==='train'?'Training':t==='compete'?'Competitions':t==='bank'?'💰 Bank':'Day Log'}</div>`).join("")}
+      <div style="flex:1"></div>
+      <button data-act="nextday" style="margin-top:0;">⏭ Advance Day</button>
+    </div>
+    <div id="tabcontent"></div>
+  `;
+  const content = document.getElementById('tabcontent');
+
+  if(activeTab === "roster"){
+    content.appendChild(renderRoster());
+  } else if(activeTab === "train"){
+    content.appendChild(renderTraining());
+  } else if(activeTab === "compete"){
+    content.appendChild(renderCompete());
+  } else if(activeTab === "log"){
+    content.appendChild(renderLog());
+  } else if(activeTab === "bank"){
+    renderBank(content);
+  }
+
+  app.querySelectorAll('[data-tab]').forEach(t=> t.onclick = ()=>{ activeTab = t.dataset.tab; render(); });
+  const nd = app.querySelector('[data-act="nextday"]');
+  if(nd) nd.onclick = ()=>{ advanceDay(); activeTab = "log"; render(); };
+  app.querySelectorAll('[data-act="del"]').forEach(b=> b.onclick = ()=> deleteHorse(b.dataset.id));
+  app.querySelectorAll('[data-act="toggle-events"]').forEach(b=> b.onclick = ()=> toggleEvents(b.dataset.id));
+  app.querySelectorAll('[data-act="toggle-artlog"]').forEach(b=> b.onclick = ()=>{
+    const id = b.dataset.id;
+    if(expandedArtLogs.has(id)) expandedArtLogs.delete(id); else expandedArtLogs.add(id);
+    render();
+  });
+  app.querySelectorAll('[data-act="upload-photo"]').forEach(b=>{
+    b.onclick = ()=>{
+      const input = app.querySelector(`[data-photo-input="${b.dataset.id}"]`);
+      if(input) input.click();
+    };
+  });
+  app.querySelectorAll('[data-photo-input]').forEach(inp=>{
+    inp.onchange = (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const h = state.horses.find(x=>x.id===inp.dataset.photoInput);
+        if(h){ h.profileImage = reader.result; save(); render(); }
+      };
+      reader.readAsDataURL(file);
+    };
+  });
+  app.querySelectorAll('[data-act="save-ref-link"]').forEach(b=>{
+    b.onclick = ()=>{
+      const input = app.querySelector(`[data-ref-link-input="${b.dataset.id}"]`);
+      const h = state.horses.find(x=>x.id===b.dataset.id);
+      if(h && input){ h.referenceLink = input.value.trim() || null; save(); render(); }
+    };
+  });
+  app.querySelectorAll('[data-act="upload-ref"]').forEach(b=>{
+    b.onclick = ()=>{
+      const input = app.querySelector(`[data-ref-input="${b.dataset.id}"]`);
+      if(input) input.click();
+    };
+  });
+  app.querySelectorAll('[data-ref-input]').forEach(inp=>{
+    inp.onchange = (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const h = state.horses.find(x=>x.id===inp.dataset.refInput);
+        if(h){
+          h.referenceImage = reader.result;
+          if(!h.referenceExpLogged){
+            h.referenceExpLogged = true;
+            h.exp += 4;
+            checkLevelUp(h);
+            addLog(`📋 ${h.name}'s Registration / Reference Sheet uploaded — +4 EXP awarded!`);
+          }
+          save(); render();
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+  });
+}
+
+function renderRoster(){
+  const wrap = el('div');
+  const form = el('div','card', `
+    <h3>Add a Horse</h3>
+    <div class="row">
+      <div><label>Name</label><input id="nh_name" placeholder="e.g. Banshee" /></div>
+      <div><label>Age</label><input id="nh_age" type="number" min="0" value="3" /></div>
+      <div><label>Breed</label><input id="nh_breed" placeholder="e.g. Foundation, Moonwalker (custom OK)" /></div>
+    </div>
+    <div class="row" style="margin-top:8px; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px; flex:none;">
+        <input type="checkbox" id="nh_events" checked style="width:auto;" />
+        <label style="margin:0;" for="nh_events">Allow sickness, injury &amp; death events for this horse</label>
+      </div>
+    </div>
+    <span class="small">Uncheck if you don't want this horse at risk of illness, injury, or career-ending/fatal events. They'll still get story beats from training and quiet day flavor — just no health risk.</span>
+    <br><button id="nh_add">Add to Stable</button>
+  `);
+  wrap.appendChild(form);
+  wrap.querySelector('#nh_add').onclick = ()=>{
+    const name = wrap.querySelector('#nh_name').value.trim();
+    const age = wrap.querySelector('#nh_age').value;
+    const breed = wrap.querySelector('#nh_breed').value.trim() || "Unspecified";
+    const eventsEnabled = wrap.querySelector('#nh_events').checked;
+    if(!name){ alert("Give your horse a name first!"); return; }
+    const h = newHorse({name, age, breed, eventsEnabled});
+    state.horses.push(h);
+    addLog(`🐎 ${h.name} (${breed}) has joined the stable at age ${h.age}.` + (!eventsEnabled ? ` (Health risk events disabled for ${h.name}.)` : ""));
+    save();
+    render();
+  };
+
+  const list = el('div');
+  if(state.horses.length === 0){
+    list.appendChild(el('div','empty-msg','No horses yet — add your first one above!'));
+  } else {
+    state.horses.forEach(h=> list.insertAdjacentHTML('beforeend', horseCardHTML(h)));
+  }
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function renderTraining(){
+  const wrap = el('div');
+  if(state.horses.length===0){ wrap.appendChild(el('div','empty-msg','Add a horse first on the Stable Roster tab.')); return wrap; }
+
+  const trainingOpts = TRAININGS.map(t=>`<option value="${t.id}">${t.name}</option>`).join("");
+  const card = el('div','card');
+  card.innerHTML = `
+    <h3>Train a Horse</h3>
+    <div class="row">
+      <div>
+        <label>Horse</label>
+        <select id="tr_horse">${state.horses.filter(h=>h.status!=="deceased").map(h=>`<option value="${h.id}" ${h.status!=="healthy"?"disabled":""}>${h.name} (${h.status}${h.status!=="healthy" && h.status!=="retired" ? ` · ${h.statusDays}d left`:""})</option>`).join("")}</select>
+      </div>
+      <div style="flex:none;">
+        <label>Mode</label>
+        <div class="pill-select" style="margin-top:4px;">
+          <div class="pill active" id="tr_mode_single">Single</div>
+          <div class="pill" id="tr_mode_combined">⚡ Combined</div>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div>
+        <label id="tr_type_label">Training Type</label>
+        <select id="tr_type">${trainingOpts}</select>
+      </div>
+      <div id="tr_type2_wrap" style="display:none;">
+        <label>Second Training</label>
+        <select id="tr_type2">${trainingOpts}</select>
+      </div>
+    </div>
+    <div id="tr_prompt"></div>
+    <div class="row" style="margin-top:8px;">
+      <div>
+        <label>Art logged? (optional)</label>
+        <select id="tr_art">
+          <option value="">No art this time</option>
+          ${Object.keys(ART_EXP).map(k=>`<option value="${k}">${k} (+${ART_EXP[k]} EXP)</option>`).join("")}
+        </select>
+      </div>
+      <div>
+        <label>Literature word count (optional)</label>
+        <input type="number" id="tr_lit_words" min="0" placeholder="e.g. 350 — min 200 for EXP" style="width:100%;" />
+        <div class="small" id="tr_lit_preview" style="margin-top:3px; color:var(--accent);"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px;">
+      <div>
+        <label>Bonus elements (optional, stack with art and/or lit)</label>
+        <div class="pill-select" id="tr_bonus_pills">
+          ${Object.keys(BONUS_EXP).map(k=>`<div class="pill" data-bonus="${k}">${k} (+${BONUS_EXP[k]})</div>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px;">
+      <div><label>Link to your art/writing (optional)</label><input id="tr_link" placeholder="https://... (DeviantArt, Toyhouse, Tumblr, etc.)" /></div>
+    </div>
+    <button id="tr_go">Complete Training</button>
+    <div id="tr_result"></div>
+  `;
+  wrap.appendChild(card);
+
+  let combinedMode = false;
+
+  card.querySelector('#tr_mode_single').onclick = ()=>{
+    combinedMode = false;
+    card.querySelector('#tr_mode_single').classList.add('active');
+    card.querySelector('#tr_mode_combined').classList.remove('active');
+    card.querySelector('#tr_type2_wrap').style.display = 'none';
+    card.querySelector('#tr_type_label').textContent = 'Training Type';
+    refreshPrompt();
+  };
+  card.querySelector('#tr_mode_combined').onclick = ()=>{
+    combinedMode = true;
+    card.querySelector('#tr_mode_combined').classList.add('active');
+    card.querySelector('#tr_mode_single').classList.remove('active');
+    card.querySelector('#tr_type2_wrap').style.display = '';
+    card.querySelector('#tr_type_label').textContent = 'First Training';
+    refreshPrompt();
+  };
+
+  const selectedBonuses = new Set();
+  card.querySelectorAll('[data-bonus]').forEach(p=>{
+    p.onclick = ()=>{
+      const k = p.dataset.bonus;
+      if(selectedBonuses.has(k)){ selectedBonuses.delete(k); p.classList.remove('active'); }
+      else { selectedBonuses.add(k); p.classList.add('active'); }
+    };
+  });
+
+  function refreshPrompt(){
+    const t = TRAININGS.find(x=>x.id===card.querySelector('#tr_type').value);
+    const t2 = combinedMode ? TRAININGS.find(x=>x.id===card.querySelector('#tr_type2').value) : null;
+    const allStats = {...t.stats};
+    if(t2) Object.entries(t2.stats).forEach(([s,v])=>{ allStats[s] = (allStats[s]||0)+v; });
+    const statsStr = Object.entries(allStats).map(([s,v])=>`+${v} ${STAT_LABELS[s]}`).join(", ");
+    if(t2){
+      card.querySelector('#tr_prompt').innerHTML = `<div class="prompt-box">⚡ <b>${t.name}</b> + <b>${t2.name}</b> <span style="font-size:.8em; color:var(--warn);">(Combined)</span><br>${t.prompt}<br><span class="small" style="opacity:.8;">${t2.prompt}</span><br><span class="small">Combined stat reward: ${statsStr}</span></div>`;
+    } else {
+      card.querySelector('#tr_prompt').innerHTML = `<div class="prompt-box">📝 <b>${t.name}</b> — ${t.prompt}<br><span class="small">Stat reward: ${statsStr}</span></div>`;
+    }
+  }
+  refreshPrompt();
+  card.querySelector('#tr_type').onchange = refreshPrompt;
+  card.querySelector('#tr_type2').onchange = refreshPrompt;
+
+  function updateLitPreview(){
+    const wc = parseInt(card.querySelector('#tr_lit_words').value) || 0;
+    const exp = calcLitExp(wc);
+    const preview = card.querySelector('#tr_lit_preview');
+    if(wc === 0){ preview.textContent = ""; }
+    else if(wc < 200){ preview.textContent = "⚠️ Minimum 200 words for EXP (0 EXP)"; preview.style.color = "var(--warn)"; }
+    else { preview.textContent = `✅ +${exp} EXP — ${2} base + ${Math.floor((wc-200)/500)*2} bonus (1 extra tier per 500 words after 200)`; preview.style.color = "var(--good)"; }
+  }
+  card.querySelector('#tr_lit_words').oninput = updateLitPreview;
+
+  card.querySelector('#tr_go').onclick = ()=>{
+    const hId = card.querySelector('#tr_horse').value;
+    const tId = card.querySelector('#tr_type').value;
+    const tId2 = combinedMode ? card.querySelector('#tr_type2').value : null;
+    const art = card.querySelector('#tr_art').value;
+    const litWords = parseInt(card.querySelector('#tr_lit_words').value) || 0;
+    const bonusKeys = Array.from(selectedBonuses);
+    const link = card.querySelector('#tr_link').value.trim();
+    const h = state.horses.find(x=>x.id===hId);
+    if(h.status !== "healthy"){
+      card.querySelector('#tr_result').innerHTML = `<div class="result fail">${h.name} is currently ${h.status} and can't train for ${h.statusDays} more day(s).</div>`;
+      return;
+    }
+    if(combinedMode && tId === tId2){
+      card.querySelector('#tr_result').innerHTML = `<div class="result fail">Please choose two different training types for a combined session.</div>`;
+      return;
+    }
+    const res = applyTraining(hId, tId, art, litWords, bonusKeys, link, tId2 || undefined);
+    if(res.severe){
+      const sv = res.severe;
+      card.querySelector('#tr_result').innerHTML = `
+        <div class="result fail">💥 ${sv.event.name}</div>
+        <div class="prompt-box"><b>${sv.died ? '🖤 Did not survive' : '🚫 Career-ending'}</b><br>${sv.text}
+          <div class="small" style="margin-top:8px;">${sv.event.outcomeNote}</div>
+        </div>`;
+      return;
+    }
+    const beat = res.beat;
+    const icon = beat.category==='breakthrough'?'✨ Breakthrough!':beat.category==='spook'?'😨 Spooked!':beat.category==='mishap'?'⚠️ Mishap':'📝 Story Beat';
+    const extra = res.bonusStat ? `<div class="small" style="margin-top:6px;">Bonus: +1 ${STAT_LABELS[res.bonusStat]}, +${res.bonusExp} EXP</div>` : "";
+    const injNote = res.injured ? `<div class="small" style="margin-top:6px; color:var(--danger);">${h.name} picked up a minor injury — out for ${h.statusDays} day(s).</div>` : "";
+    const expNote = res.expGain ? `<div class="small" style="margin-top:6px;">Total EXP this session: <b>+${res.expGain}</b></div>` : "";
+    card.querySelector('#tr_result').innerHTML = `
+      <div class="result success">Training logged!</div>
+      <div class="prompt-box"><b>${icon}</b><br>${beat.text}${extra}${injNote}${expNote}
+        <div class="small" style="margin-top:8px;">💡 Draw and/or write this moment for bonus inspiration — it's separate from the base training prompt above!</div>
+      </div>`;
+    selectedBonuses.clear();
+    card.querySelectorAll('[data-bonus]').forEach(p=> p.classList.remove('active'));
+    card.querySelector('#tr_link').value = "";
+    card.querySelector('#tr_lit_words').value = "";
+    card.querySelector('#tr_lit_preview').textContent = "";
+  };
+
+  return wrap;
+}
+
+function renderCompete(){
+  const wrap = el('div');
+  if(state.horses.length===0){ wrap.appendChild(el('div','empty-msg','Add a horse first on the Stable Roster tab.')); return wrap; }
+
+  const card = el('div','card');
+  card.innerHTML = `
+    <h3>Enter a Competition</h3>
+    <div class="row">
+      <div>
+        <label>Horse</label>
+        <select id="cp_horse">${state.horses.filter(h=>h.status!=="deceased").map(h=>`<option value="${h.id}" ${h.status!=="healthy"?"disabled":""}>${h.name} (${h.status}${h.status!=="healthy" && h.status!=="retired" ? ` · ${h.statusDays}d left`:""})</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>Discipline</label>
+        <select id="cp_disc">${Object.keys(DISCIPLINES).map(d=>`<option value="${d}">${d}</option>`).join("")}</select>
+      </div>
+      <div>
+        <label>Difficulty</label>
+        <select id="cp_diff">
+          <option>Local</option><option>Regional</option><option>National</option><option>Elite</option>
+        </select>
+      </div>
+    </div>
+    <div id="cp_info" class="small" style="margin-top:8px;"></div>
+    <div class="row" style="margin-top:8px;">
+      <div>
+        <label>Art logged? (optional)</label>
+        <select id="cp_art">
+          <option value="">No art this time</option>
+          ${Object.keys(ART_EXP).map(k=>`<option value="${k}">${k} (+${ART_EXP[k]} EXP)</option>`).join("")}
+        </select>
+      </div>
+      <div>
+        <label>Literature word count (optional)</label>
+        <input type="number" id="cp_lit_words" min="0" placeholder="e.g. 350 — min 200 for EXP" style="width:100%;" />
+        <div class="small" id="cp_lit_preview" style="margin-top:3px;"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px;">
+      <div>
+        <label>Bonus elements (optional, stack with art and/or lit)</label>
+        <div class="pill-select" id="cp_bonus_pills">
+          ${Object.keys(BONUS_EXP).map(k=>`<div class="pill" data-bonus="${k}">${k} (+${BONUS_EXP[k]})</div>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px;">
+      <div><label>Link to your art/writing (optional)</label><input id="cp_link" placeholder="https://... (DeviantArt, Toyhouse, Tumblr, etc.)" /></div>
+    </div>
+    <button id="cp_go">Run Competition</button>
+    <div id="cp_result"></div>
+  `;
+  wrap.appendChild(card);
+
+  const selectedBonuses = new Set();
+  card.querySelectorAll('[data-bonus]').forEach(p=>{
+    p.onclick = ()=>{
+      const k = p.dataset.bonus;
+      if(selectedBonuses.has(k)){ selectedBonuses.delete(k); p.classList.remove('active'); }
+      else { selectedBonuses.add(k); p.classList.add('active'); }
+    };
+  });
+
+  function refreshInfo(){
+    const hId = card.querySelector('#cp_horse').value;
+    const disc = card.querySelector('#cp_disc').value;
+    const diff = card.querySelector('#cp_diff').value;
+    const h = state.horses.find(x=>x.id===hId);
+    const relevant = DISCIPLINES[disc];
+    const avg = (relevant.reduce((a,s)=>a+h.stats[s],0)/relevant.length).toFixed(1);
+    const diffVal = {Local:10, Regional:20, National:35, Elite:50}[diff];
+    const chance = clamp(50 + (avg - diffVal)*2, 5, 95);
+    card.querySelector('#cp_info').innerHTML = `Relevant stats: <b>${relevant.map(s=>STAT_LABELS[s]).join(", ")}</b> — avg <b>${avg}</b> &nbsp;|&nbsp; Estimated success chance: <b>${chance.toFixed(0)}%</b>`;
+  }
+  refreshInfo();
+  ['cp_horse','cp_disc','cp_diff'].forEach(id=> card.querySelector('#'+id).onchange = refreshInfo);
+
+  function updateCpLitPreview(){
+    const wc = parseInt(card.querySelector('#cp_lit_words').value) || 0;
+    const exp = calcLitExp(wc);
+    const preview = card.querySelector('#cp_lit_preview');
+    if(wc === 0){ preview.textContent = ""; }
+    else if(wc < 200){ preview.textContent = "⚠️ Minimum 200 words for EXP (0 EXP)"; preview.style.color = "var(--warn)"; }
+    else { preview.textContent = `✅ +${exp} EXP`; preview.style.color = "var(--good)"; }
+  }
+  card.querySelector('#cp_lit_words').oninput = updateCpLitPreview;
+
+  card.querySelector('#cp_go').onclick = ()=>{
+    const hId = card.querySelector('#cp_horse').value;
+    const disc = card.querySelector('#cp_disc').value;
+    const diff = card.querySelector('#cp_diff').value;
+    const art = card.querySelector('#cp_art').value;
+    const litWords = parseInt(card.querySelector('#cp_lit_words').value) || 0;
+    const bonusKeys = Array.from(selectedBonuses);
+    const link = card.querySelector('#cp_link').value.trim();
+    const h = state.horses.find(x=>x.id===hId);
+    if(h.status !== "healthy"){
+      card.querySelector('#cp_result').innerHTML = `<div class="result fail">${h.name} is currently ${h.status} and can't compete for ${h.statusDays} more day(s).</div>`;
+      return;
+    }
+    const r = runCompetition(hId, disc, diff, art, litWords, bonusKeys, link);
+    if(r.severe){
+      const sv = r.severe;
+      card.querySelector('#cp_result').innerHTML = `
+        <div class="result fail">💥 ${sv.event.name}</div>
+        <div class="prompt-box"><b>${sv.died ? '🖤 Did not survive' : '🚫 Career-ending'}</b><br>${sv.text}
+          <div class="small" style="margin-top:8px;">${sv.event.outcomeNote}</div>
+        </div>`;
+      return;
+    }
+    const placementLabel = p => p===1?"1st":p===2?"2nd":p===3?"3rd":p===4?"4th":p===5?"5th":"6th";
+    if(r.success){
+      const buxx = PLACEMENT_BUXX_AMOUNTS[r.placement] || 0;
+      const placeStr = placementLabel(r.placement);
+      let resultHtml = `<div class="result success">🏆 Placed ${placeStr}! Total EXP this entry: <b>+${r.expGain}</b>.`;
+      if(buxx){
+        resultHtml += ` <span style="color:var(--warn);">฿${buxx.toLocaleString()} Buxx${bankAccount.linked ? ' — depositing…' : ' (link bank to auto-deposit)'}</span>`;
+      }
+      resultHtml += `</div>`;
+      card.querySelector('#cp_result').innerHTML = resultHtml;
+      if(buxx && bankAccount.linked){
+        const h2 = state.horses.find(x=>x.id===card.querySelector('#cp_horse').value);
+        const desc = `Competition award: ${placeStr} place — ${card.querySelector('#cp_disc').value} (${card.querySelector('#cp_diff').value})${h2?' with '+h2.name:''}`;
+        depositBuxx(buxx, desc).then(depResult => {
+          const existing = card.querySelector('#cp_result');
+          if(depResult && depResult.success){
+            existing.innerHTML += `<div class="result success" style="margin-top:4px;">✅ ฿${buxx.toLocaleString()} deposited to bank! New balance: <b>฿${Number(depResult.data.newBalance).toLocaleString()}</b></div>`;
+          } else {
+            existing.innerHTML += `<div class="result fail" style="margin-top:4px;">⚠️ Bank deposit failed: ${depResult ? depResult.error : 'Unknown error'}. Log in at the Bank tab and deposit manually.</div>`;
+          }
+        });
+      }
+    } else {
+      card.querySelector('#cp_result').innerHTML = `<div class="result fail">No placement this time.${r.injured? " A minor injury occurred." : ""} Total EXP this entry: <b>+${r.expGain}</b>.</div>`;
+    }
+    selectedBonuses.clear();
+    card.querySelectorAll('[data-bonus]').forEach(p=> p.classList.remove('active'));
+    card.querySelector('#cp_link').value = "";
+    card.querySelector('#cp_lit_words').value = "";
+    card.querySelector('#cp_lit_preview').textContent = "";
+    refreshInfo();
+  };
+
+  return wrap;
+}
+
+
+const PLACEMENT_BUXX_AMOUNTS = {1:1000, 2:750, 3:500, 4:250, 5:100, 6:50};
+
+// Google Apps Script requires requests sent as plain text with JSON stringified in the body,
+// AND the script must be deployed with "Anyone" access. We use a script-tag JSONP trick for GETs
+// and a form POST via hidden iframe for POSTs to avoid CORS preflight blocks.
+
+function gasPost(payload){
+  return new Promise((resolve) => {
+    const callbackName = 'gasCb_' + Date.now();
+    // Encode payload as a URL param so GAS can read it via e.parameter.data
+    const url = BANK_URL + '?callback=' + callbackName + '&data=' + encodeURIComponent(JSON.stringify(payload));
+    const script = document.createElement('script');
+    let done = false;
+    window[callbackName] = (data) => {
+      done = true;
+      delete window[callbackName];
+      document.head.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = () => {
+      if(!done){ done=true; delete window[callbackName]; document.head.removeChild(script); resolve({success:false,error:'Network error'}); }
+    };
+    setTimeout(()=>{ if(!done){ done=true; delete window[callbackName]; try{document.head.removeChild(script);}catch(e){} resolve({success:false,error:'Request timed out'}); } }, 12000);
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+function gasGet(params){
+  return new Promise((resolve) => {
+    const callbackName = 'gasCb_' + Date.now();
+    const qs = Object.entries(params).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+    const url = BANK_URL + '?' + qs + '&callback=' + callbackName;
+    const script = document.createElement('script');
+    let done = false;
+    window[callbackName] = (data) => {
+      done = true;
+      delete window[callbackName];
+      document.head.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = () => {
+      if(!done){ done=true; delete window[callbackName]; document.head.removeChild(script); resolve({success:false,error:'Network error'}); }
+    };
+    setTimeout(()=>{ if(!done){ done=true; delete window[callbackName]; try{document.head.removeChild(script);}catch(e){} resolve({success:false,error:'Request timed out'}); } }, 12000);
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+async function depositBuxx(amount, description){
+  if(!bankAccount.linked || !bankAccount.userId || !bankAccount.password){
+    return {success:false, error:'No bank account linked — go to the Bank tab to connect yours.'};
+  }
+  return await gasPost({
+    action:'submitDeposit',
+    userId: bankAccount.userId,
+    amount: amount,
+    proofUrl: 'EquiStories Stable Sim — automated competition award',
+    description: description,
+  });
+}
+
+async function checkBankBalance(){
+  if(!bankAccount.userId) return null;
+  return await gasGet({action:'checkBalance', userId: bankAccount.userId});
+}
+
+
+function renderBank(container){
+  const linked = bankAccount.linked;
+  const card = el('div','card');
+  card.innerHTML = `
+    <h3>💰 Account & Bank Settings</h3>
+    ${linked
+      ? `<div class="result success" style="margin-bottom:10px;">✅ Signed in as <b>${bankAccount.userId}</b></div>`
+      : `<div class="result fail" style="margin-bottom:10px;">⚠️ Not signed in.</div>`
+    }
+    ${linked ? `
+    <button id="bk_check" class="secondary">💳 Check Buxx Balance</button>
+    <div id="bk_balance" style="margin-top:8px;"></div>
+    <hr style="border-color:#4a392a; margin:12px 0;"/>
+    <div class="small" style="color:var(--dim); margin-bottom:4px;">Competition Buxx awards (auto-deposited on placement):</div>
+    <div class="small">🥇 1st — ฿1,000 &nbsp;|&nbsp; 🥈 2nd — ฿750 &nbsp;|&nbsp; 🥉 3rd — ฿500 &nbsp;|&nbsp; 4th — ฿250 &nbsp;|&nbsp; 5th — ฿100 &nbsp;|&nbsp; 6th — ฿50</div>
+    <hr style="border-color:#4a392a; margin:12px 0;"/>
+    <button id="bk_signout" class="danger">🔓 Sign Out</button>
+    ` : `<p class="small" style="color:var(--dim);">You are not signed in. Return to the main screen to sign in.</p>`}
+    <hr style="border-color:#4a392a; margin:16px 0;"/>
+    <h3 style="margin-top:0;">⚙️ Admin: Stable Data URL</h3>
+    <p class="small" style="color:var(--dim); margin-top:0;">Paste the /exec URL from your deployed Stable Data Apps Script. Only needs to be set once — it's saved in this browser.</p>
+    <div style="display:flex; gap:6px; align-items:flex-end;">
+      <div style="flex:1;"><label>Stable Data Script URL</label><input id="bk_stable_url" placeholder="https://script.google.com/macros/s/…/exec" value="${STABLE_URL||''}" /></div>
+      <button id="bk_save_url" style="margin-top:0; white-space:nowrap;">💾 Save</button>
+    </div>
+    <div id="bk_url_result" style="margin-top:6px;"></div>
+  `;
+  container.appendChild(card);
+
+  if(linked){
+    card.querySelector('#bk_check').onclick = async ()=>{
+      const balDiv = card.querySelector('#bk_balance');
+      balDiv.innerHTML = '<div class="small" style="color:var(--dim);">Checking…</div>';
+      const r = await checkBankBalance();
+      if(r && r.success){
+        balDiv.innerHTML = `<div class="result success">💳 <b>${r.data.displayName}</b>: <b>฿${Number(r.data.balance).toLocaleString()}</b></div>`;
+      } else {
+        balDiv.innerHTML = `<div class="result fail">Could not fetch balance: ${r ? r.error : 'Network error'}</div>`;
+      }
+    };
+    card.querySelector('#bk_signout').onclick = async ()=>{
+      if(!confirm('Sign out? Your stable data is saved to Google Sheets — sign back in anytime.')) return;
+      bankAccount = {userId:'', password:'', linked:false};
+      state.horses = []; state.day = 1; state.log = []; state.loaded = false;
+      await saveBankAccount();
+      load();
+    };
+  }
+
+  card.querySelector('#bk_save_url').onclick = ()=>{
+    const url = card.querySelector('#bk_stable_url').value.trim();
+    const res = card.querySelector('#bk_url_result');
+    if(!url){ res.innerHTML = '<div class="result fail">Please paste a URL first.</div>'; return; }
+    if(!url.includes('script.google.com')){ res.innerHTML = '<div class="result fail">That doesn't look like a Google Apps Script URL.</div>'; return; }
+    STABLE_URL = url;
+    localStorage.setItem('equi_stable_url', url);
+    res.innerHTML = '<div class="result success">✅ Stable URL saved to this browser!</div>';
+  };
+}
+
+
+function renderLog(){
+  const wrap = el('div','card');
+  wrap.innerHTML = `<h3>Day-by-Day Log</h3><div class="log">${
+    state.log.length===0 ? '<div class="small">Nothing has happened yet — advance a day or train a horse!</div>' :
+    state.log.map(l=>`<div><b>${todayLabel(l.day)}:</b> ${l.msg}</div>`).join("")
+  }</div>`;
+  return wrap;
+}
+
+load();
+})();
+</script>
