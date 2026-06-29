@@ -10,7 +10,7 @@
 <style>
   html, body{ background:#1b1410; margin:0; padding:0; }
   #app{
-    --bg:#1b1410; --panel:#241a14; --panel2:#2c2118; --accent:#c98a3a; --accent2:#7a9b6e; --warn:#d4a030;
+    --bg:#1b1410; --panel:#241a14; --panel2:#2c2118; --accent:#c98a3a; --accent2:#7a9b6e; --warn:#d4a030; --good:#7a9b6e;
     --text:#f1e6d8; --dim:#b5a392; --danger:#b1473f; --warn:#c9a23a; --good:#7a9b6e;
     font-family:'Georgia','Garamond',serif; color:var(--text); background:var(--bg);
     padding:18px; border-radius:10px; max-width:980px; margin:0 auto;
@@ -83,6 +83,12 @@
   #modal-overlay .row > div { flex:1; }
   #modal-overlay button { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:.9em; background:var(--accent); color:#241a14; font-weight:bold; }
   #modal-overlay button.secondary { background:#2c2118; color:var(--text); border:1px solid #4a392a; }
+  .tag.sick { background:#4a2a1a; color:#e8c0a0; border-color:#8a5a3a; }
+  .tag.injured { background:#4a1a1a; color:#e8a0a0; border-color:#8a3a3a; }
+  .tag.retired { background:#2a2a2a; color:#a0a0a0; border-color:#5a5a5a; }
+  .tag.healthy { background:#1a3a2a; color:#a0e8c0; border-color:#3a7a5a; }
+  span.artlog-link, a.artlog-link { color:var(--accent); text-decoration:none; }
+  span.artlog-link:hover, a.artlog-link:hover { text-decoration:underline; }
 </style>
 <script>
 (function(){
@@ -221,7 +227,39 @@ function newHorse(data){
       pastInjuries: data.conditions?.pastInjuries || [],  // free-text list
     },
     // Tack
-    tack: data.tack || { saddle:"", bridle:"", other:"", bonuses:[] },
+    tack: data.tack || { saddle:"", bridle:"", other:"", shoes:"", bonuses:[] },
+    vetCare: data.vetCare || {
+      lastVaccineDay: null,     // day routine shots were last given
+      vaccineProtected: false,  // reduced illness chance until next year
+    },
+    farrierCare: data.farrierCare || {
+      lastVisitDay: null,       // day of last farrier visit
+      nextDueDay: null,         // last + 45
+      hoofIssues: [],           // discovered hoof problems
+    },
+    chronicCare: data.chronicCare || {
+      // Navicular
+      navicular: false,
+      navicularShoes: false,    // egg-bar + wedge fitted
+      navicularNSAIDs: false,
+      osphosDue: null,          // day next OSPHOS injection is due
+      osphosMissed: 0,          // consecutive missed doses
+      // Laminitis
+      laminitis: false,
+      laminitisStage: null,     // "acute" | "chronic"
+      laminitisXray: false,
+      laminitisShoes: false,
+      laminitisNSAIDs: false,
+      strictDiet: false,        // timothy only, no alfalfa, no sugary treats
+      dryPaddock: false,        // must be kept off grass
+      emsRisk: false,           // flagged as potential EMS
+      // Arthritis
+      arthritis: false,
+      arthritisSeverity: 0,     // 0-3: mild, moderate, severe, retirement
+      adequanDue: null,         // day next Adequan is due
+      adequanMissed: 0,
+      arthritisNSAIDs: false,
+    },
     profileImage: null,
     artLog: [],
     history: [],
@@ -381,51 +419,188 @@ const AILMENT_EVENTS = [
 const INJURY_EVENTS = [
   {text:"{name} comes in from the pasture this morning with a noticeable limp. You can't pinpoint the leg by eye alone — time to call the vet for a proper diagnosis.", days:[5,10]},
   {text:"You find {name} with a swollen fetlock, warm and tender when you run your hand down the leg. The vet's coming out to take a look.", days:[5,9]},
-  {text:"{name} is sore-footed on the gravel, stepping carefully and reluctant to put full weight down. Could be a bruise, could be an abscess brewing — hoof testers needed.", days:[4,8]},
+  {text:"{name} is sore-footed on the gravel, stepping carefully and reluctant to put full weight down. Could be a bruise, could be an abscess brewing — hoof testers needed.", days:[4,8], hoofRelated:true},
   {text:"You discover a deep gash along {name}'s cannon bone, likely from a run-in with the fence line. It's bleeding more than you'd like — stitches are probably in order.", days:[6,10]},
   {text:"{name} pulled up short mid-gallop in the field, favoring a front leg. No obvious wound, but the lameness is plain to see.", days:[5,9]},
   {text:"You notice {name} holding their head a little low and reluctant to turn sharply — could be a stiff neck, could be something in the back. The vet's been called.", days:[4,7]},
   {text:"{name} has a puncture wound on their chest, small but deep — possibly from a stray nail or branch. You're cleaning it out and starting antibiotics on the vet's advice.", days:[5,8]},
   {text:"You find {name} standing oddly in the field, weight shifted off a hind leg, and they flinch hard when you press just above the hock.", days:[5,9]},
+  {text:"{name} has a hot, painful abscess brewing in their left fore — they're three-legged lame and miserable. The farrier is on the way to find and drain it.", days:[3,7], hoofRelated:true},
+  {text:"You pick out {name}'s feet and find a deep crack running up the outside wall of their right hind. The farrier needs to see this before it gets worse.", days:[2,5], hoofRelated:true},
+  {text:"{name} is pointing a foreleg at rest, reluctant to load weight on it, and their digital pulse is bounding. Possible laminitis brewing — vet called immediately.", days:[6,14], laminitisRisk:true, hoofRelated:true},
+  {text:"During evening check you notice {name} shifting weight constantly between both fronts, pawing the ground. Their feet are warm to the touch.", days:[5,10], laminitisRisk:true, hoofRelated:true},
+  {text:"{name} stumbled badly coming out of a tight turn, and now shows subtle but consistent low-grade lameness in a front foot. Navicular ruled in to be checked.", days:[4,8], navicularRisk:true, hoofRelated:true},
+  {text:"{name} slipped badly and went down hard during turnout. They got back up, but are moving stiffly and the fall may have caused soft tissue damage.", days:[6,12], arthritisRisk:true},
+  {text:"{name} strained a suspensory ligament — the tendon is tight and warm along its full length. Box rest immediately.", days:[14,21], suspensoryRisk:true},
 ];
 
+const HOOF_ISSUES = [
+  "Thrush (mild)",
+  "White line disease",
+  "Hoof wall crack",
+  "Underrun heels",
+  "Long toe / low heel",
+  "Seedy toe",
+  "Corn (bruising)",
+  "Thin soles",
+];
+
+// ============================================
+// CONDITION TRIGGERS
+// ============================================
+
+function triggerLaminitis(h, day){
+  if(h.chronicCare.laminitis) return; // already diagnosed
+  h.chronicCare.laminitis = true;
+  h.chronicCare.laminitisStage = "acute";
+  h.status = "injured";
+  h.statusDays = 6;
+  addLog(`🦶 LAMINITIS SUSPECTED: ${h.name} shows classic signs — go to the Vet & Farrier tab to call the vet for a diagnostic x-ray, start cold-hosing and ice boots immediately!`, day);
+  addLog(`⚕️ ACUTE LAMINITIS CARE: ${h.name} needs 6 days stall rest. Cold hose twice daily, ice boots for 48hrs, NSAIDs for pain. Call the farrier for therapeutic shoeing.`, day);
+}
+
+function triggerNavicular(h, day){
+  if(h.chronicCare.navicular) return;
+  h.chronicCare.navicular = true;
+  h.status = "injured";
+  h.statusDays = 7;
+  addLog(`🦶 NAVICULAR SUSPECTED: ${h.name} is showing signs consistent with navicular syndrome. A farrier diagnostic visit is required immediately.`, day);
+  addLog(`⚕️ ${h.name} will need egg-bar shoes with wedge pads, NSAIDs for the lay-up period, and OSPHOS injections every 90-180 days long-term.`, day);
+}
+
+function triggerArthritis(h, day){
+  if(h.chronicCare.arthritis) return;
+  h.chronicCare.arthritis = true;
+  h.chronicCare.arthritisSeverity = 0;
+  h.chronicCare.adequanDue = (day||state.day) + 30;
+  h.status = "injured";
+  h.statusDays = 3;
+  addLog(`🦴 ARTHRITIS DIAGNOSED: ${h.name} has been diagnosed with arthritis. 3-day lay-up with NSAIDs required, followed by monthly Adequan injections.`, day);
+  addLog(`⚕️ Go to the Vet & Farrier tab to manage ${h.name}'s Adequan schedule. Missing doses will result in painful flare-ups.`, day);
+}
+
+function addFarrierHoofIssue(h, day){
+  if(!h.farrierCare) h.farrierCare = {lastVisitDay:null, nextDueDay:null, hoofIssues:[]};
+  const issue = pick(HOOF_ISSUES);
+  if(!h.farrierCare.hoofIssues.includes(issue)){
+    h.farrierCare.hoofIssues.push(issue);
+    addLog(`🪝 HOOF ISSUE FOUND: ${h.name} has developed ${issue}. Schedule a farrier visit to treat it.`, day);
+  }
+}
+
 function advanceDay(){
-  const endingDay = state.day; // the day that is wrapping up — events get logged here
+  const endingDay = state.day;
   const logCountBefore = state.log.length;
   state.horses.forEach(h=>{
     if(h.status === "deceased") return;
     h.daysOwned += 1;
-    if(h.status === "retired"){
-      return; // retired horses don't generate individual daily noise
+    if(!h.vetCare)     h.vetCare = {lastVaccineDay:null, vaccineProtected:false};
+    if(!h.farrierCare) h.farrierCare = {lastVisitDay:null, nextDueDay:null, hoofIssues:[]};
+    if(!h.chronicCare) h.chronicCare = {};
+
+    // --- CHRONIC CARE REMINDERS ---
+    // Farrier due
+    if(h.farrierCare.nextDueDay && endingDay >= h.farrierCare.nextDueDay && !h.farrierCare._reminded){
+      h.farrierCare._reminded = true;
+      addLog(`🪝 FARRIER DUE: It has been 45 days since ${h.name}'s last farrier visit. Head to the Vet & Farrier tab to schedule!`, endingDay);
     }
+    // Vaccine due (annual)
+    if(h.vetCare.lastVaccineDay && (endingDay - h.vetCare.lastVaccineDay) >= 365 && !h.vetCare._vaccineReminded){
+      h.vetCare._vaccineReminded = true;
+      addLog(`💉 VACCINES DUE: ${h.name} is due for their annual shots. Schedule a routine vet visit!`, endingDay);
+    }
+    // Expire vaccine protection after 365 days
+    if(h.vetCare.vaccineProtected && h.vetCare.lastVaccineDay && (endingDay - h.vetCare.lastVaccineDay) >= 365){
+      h.vetCare.vaccineProtected = false;
+      addLog(`💉 ${h.name}'s vaccine protection has expired. Time for a booster!`, endingDay);
+    }
+    // OSPHOS reminder (navicular)
+    if(h.chronicCare.navicular && h.chronicCare.osphosDue && endingDay >= h.chronicCare.osphosDue){
+      addLog(`💊 OSPHOS DUE: ${h.name} needs their next OSPHOS injection for navicular management. Schedule a vet visit immediately — missed doses worsen the condition!`, endingDay);
+      h.chronicCare.osphosMissed = (h.chronicCare.osphosMissed||0) + 1;
+      if(h.chronicCare.osphosMissed >= 2 && Math.random() < 0.4){
+        addLog(`⚠️ ${h.name}'s navicular has worsened due to missed OSPHOS treatment — they are now lame and may need to be retired.`, endingDay);
+        h.status = "injured"; h.statusDays = rand(14,30);
+        if(h.chronicCare.osphosMissed >= 3 && Math.random() < 0.5){
+          h.status = "retired";
+          addLog(`🚫 ${h.name}'s navicular has deteriorated beyond recovery due to lack of treatment. They have been retired.`, endingDay);
+        }
+      }
+    }
+    // Adequan reminder (arthritis)
+    if(h.chronicCare.arthritis && h.chronicCare.adequanDue && endingDay >= h.chronicCare.adequanDue){
+      addLog(`💊 ADEQUAN DUE: ${h.name} needs their monthly Adequan injection. Missing a dose will result in a painful flare-up!`, endingDay);
+      h.chronicCare.adequanMissed = (h.chronicCare.adequanMissed||0) + 1;
+      if(h.chronicCare.adequanMissed >= 1){
+        addLog(`😣 ${h.name} is stiff and sore today — they missed their Adequan dose and are in too much pain to train or compete. Rest day.`, endingDay);
+        if(h.status === "healthy"){ h.status = "injured"; h.statusDays = 1; }
+      }
+    }
+    // Arthritis annual progression
+    if(h.chronicCare.arthritis && h.agingEnabled !== false){
+      const joined = h.joinedOnDay || 1;
+      const daysSince = endingDay - joined;
+      if(daysSince > 0 && daysSince % 365 === 0){
+        const prev = h.chronicCare.arthritisSeverity || 0;
+        if(prev < 3 && Math.random() < (0.3 + prev * 0.15)){
+          h.chronicCare.arthritisSeverity = prev + 1;
+          const labels = ["mild","moderate","severe","retirement-level"];
+          addLog(`📈 ${h.name}'s arthritis has progressed to ${labels[h.chronicCare.arthritisSeverity]}. Consult your vet about adjusting their management plan.`, endingDay);
+          if(h.chronicCare.arthritisSeverity >= 3){
+            addLog(`🚫 ${h.name}'s arthritis has reached retirement severity. They can no longer safely compete.`, endingDay);
+            h.status = "retired";
+          }
+        }
+      }
+    }
+    // Laminitis pasture risk
+    if(h.chronicCare.laminitis && !h.chronicCare.dryPaddock && h.eventsEnabled !== false && Math.random() < 0.12){
+      addLog(`🌿 ⚠️ LAMINITIS FLARE: ${h.name} has been on pasture despite their laminitis diagnosis. Their condition has worsened catastrophically — emergency vet call!`, endingDay);
+      h.status = "injured"; h.statusDays = rand(14,28);
+      if(Math.random() < 0.25){
+        h.status = "retired";
+        addLog(`🚫 The laminitis rotation has been so severe that ${h.name} must be retired. This is the result of continued pasture access.`, endingDay);
+      }
+    }
+
+    if(h.status === "retired") return;
+
     if(h.status !== "healthy"){
       h.statusDays -= 1;
       if(h.statusDays <= 0){
-        addLog(`✅ ${h.name} has fully recovered from being ${h.status}.`, endingDay);
+        addLog(`✅ ${h.name} has fully recovered and is cleared for work.`, endingDay);
         h.status = "healthy"; h.statusDays = 0;
       } else {
-        addLog(`🩺 ${h.name} is still recovering — ${h.statusDays} day(s) left before they're cleared for work.`, endingDay);
+        addLog(`🩺 ${h.name} is still recovering — ${h.statusDays} day(s) left.`, endingDay);
       }
     } else if(h.eventsEnabled === false){
-      // health risk disabled for this horse — skip sickness/injury/death rolls entirely
+      // health risk disabled
     } else {
+      // Illness chance reduced if vaccine-protected
+      const illnessChance = h.vetCare?.vaccineProtected ? 0.012 : 0.03;
+      const injuryChance  = 0.05;
       const roll = Math.random();
       if(roll < 0.004){
-        const severe = maybeSevereEvent(h, "turnout", 1); // already passed the outer roll, force trigger
+        const severe = maybeSevereEvent(h, "turnout", 1);
         if(severe){
           addLog(`💥 ${severe.event.name}: ${severe.text}`, endingDay);
           addLog(severe.died ? `🖤 Despite every effort, ${h.name} did not survive. ${severe.event.outcomeNote}` : `🚫 ${h.name} is now permanently retired. ${severe.event.outcomeNote}`, endingDay);
         }
-      } else if(roll < 0.03){
+      } else if(roll < illnessChance){
         const a = pick(AILMENT_EVENTS);
         h.status = "sick"; h.statusDays = rand(a.days[0], a.days[1]);
         addLog(`🤒 ${a.text.replaceAll("{name}", h.name)} Expect about ${h.statusDays} day(s) before they're back to normal.`, endingDay);
-      } else if(roll < 0.05){
+      } else if(roll < illnessChance + injuryChance * conditionInjuryModifier(h)){
         const inj = pick(INJURY_EVENTS);
         h.status = "injured"; h.statusDays = rand(inj.days[0], inj.days[1]);
         addLog(`🩹 ${inj.text.replaceAll("{name}", h.name)} Out for roughly ${h.statusDays} day(s).`, endingDay);
+        // Check for special risks triggered by this injury event
+        if(inj.laminitisRisk && Math.random() < 0.35)  triggerLaminitis(h, endingDay);
+        if(inj.navicularRisk && Math.random() < 0.30)  triggerNavicular(h, endingDay);
+        if(inj.arthritisRisk && Math.random() < 0.40)  triggerArthritis(h, endingDay);
+        if(inj.suspensoryRisk){ h.conditions = h.conditions||{}; h.conditions.suspensory = true; addLog(`⚠️ ${h.name} has suffered a suspensory injury — this will permanently increase their injury risk.`, endingDay); }
+        if(inj.hoofRelated && Math.random() < 0.2) addFarrierHoofIssue(h, endingDay);
       }
-      // otherwise: a quiet day for this horse — no individual log entry
     }
     // Age up: every 365 days after the day they joined (only if agingEnabled)
     if(h.agingEnabled !== false){
@@ -615,9 +790,15 @@ function applyTraining(horseId, trainingId, artType, litWordCount, bonusKeys, li
     h.stats[bonusStat] += 1;
     h.exp += bonusExp;
   } else if(beat.category === "mishap" && h.eventsEnabled !== false){
-    if(Math.random() < 0.35 * conditionInjuryModifier(h)){
+    const mishapRoll = Math.random();
+    if(mishapRoll < 0.35 * conditionInjuryModifier(h)){
       injured = true;
       h.status = "injured"; h.statusDays = rand(2,5);
+      // Small chance to trigger a chronic condition from a training mishap
+      if(!h.chronicCare) h.chronicCare = {};
+      if(!h.chronicCare.navicular && Math.random() < 0.04) triggerNavicular(h, state.day);
+      if(!h.chronicCare.arthritis && Math.random() < 0.05) triggerArthritis(h, state.day);
+      if(!h.chronicCare.laminitis && Math.random() < 0.02) triggerLaminitis(h, state.day);
     }
   }
   let expGain = 0;
@@ -684,6 +865,9 @@ function runCompetition(horseId, discipline, difficulty, artType, litWordCount, 
     if(h.eventsEnabled !== false && Math.random() < 0.22 * conditionInjuryModifier(h)){
       injured = true;
       h.status = "injured"; h.statusDays = rand(4,9);
+      if(!h.chronicCare) h.chronicCare = {};
+      if(!h.chronicCare.arthritis && Math.random() < 0.07) triggerArthritis(h, state.day);
+      if(!h.chronicCare.navicular && Math.random() < 0.03) triggerNavicular(h, state.day);
     }
   }
   let sources = [];
@@ -824,20 +1008,38 @@ function horseCardHTML(h){
   const COND_LABELS = {blind:"👁️ Blind",deaf:"👂 Deaf",asthma:"💨 Asthma",cushings:"🧪 Cushing's",kissingSpine:"🦴 Kissing Spine",suspensory:"⚠️ Prior Suspensory"};
   const activeConds = Object.entries(h.conditions||{}).filter(([k,v])=>v===true && COND_LABELS[k]);
   const pastInj = (h.conditions?.pastInjuries||[]);
-  const condHtml = (activeConds.length || pastInj.length) ? `
+  const cc = h.chronicCare||{};
+  const chronicTags = [];
+  if(cc.navicular)  chronicTags.push(`<span class="tag" style="background:#4a1a1a;color:#e8a0a0;border-color:#8a3a3a;font-size:.75em;">🦶 Navicular${cc.navicularShoes?" (shod)":""}</span>`);
+  if(cc.laminitis)  chronicTags.push(`<span class="tag" style="background:#4a1a1a;color:#e8a0a0;border-color:#8a3a3a;font-size:.75em;">🦶 Laminitis${cc.strictDiet?" 🌾":""}${cc.dryPaddock?" 🏠":""}</span>`);
+  if(cc.arthritis)  chronicTags.push(`<span class="tag" style="background:#3a2a1a;color:#d4a87a;border-color:#7a5a3a;font-size:.75em;">🦴 Arthritis (${["Mild","Moderate","Severe","Retirement"][cc.arthritisSeverity||0]})</span>`);
+  // Upcoming care warnings
+  const careWarnings = [];
+  if(cc.navicular && cc.osphosDue && cc.osphosDue - state.day <= 14)
+    careWarnings.push(`💊 OSPHOS due Day ${cc.osphosDue} (in ${cc.osphosDue-state.day}d)`);
+  if(cc.arthritis && cc.adequanDue && cc.adequanDue - state.day <= 7)
+    careWarnings.push(`💊 Adequan due Day ${cc.adequanDue} (in ${cc.adequanDue-state.day}d)`);
+  if(h.farrierCare?.nextDueDay && h.farrierCare.nextDueDay - state.day <= 5)
+    careWarnings.push(`🪝 Farrier due Day ${h.farrierCare.nextDueDay} (in ${h.farrierCare.nextDueDay-state.day}d)`);
+  if(h.vetCare?.lastVaccineDay && state.day - h.vetCare.lastVaccineDay >= 350)
+    careWarnings.push(`💉 Vaccines due soon`);
+  const condHtml = (activeConds.length || pastInj.length || chronicTags.length || careWarnings.length) ? `
     <div style="margin-top:6px;">
-      <div class="small" style="color:var(--warn);font-weight:bold;margin-bottom:3px;">⚕️ Health Conditions</div>
+      <div class="small" style="color:var(--warn);font-weight:bold;margin-bottom:3px;">⚕️ Health & Care</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;">
         ${activeConds.map(([k])=>`<span class="tag" style="background:#4a1a1a;color:#e8a0a0;border-color:#8a3a3a;font-size:.75em;">${COND_LABELS[k]}</span>`).join("")}
+        ${chronicTags.join("")}
         ${pastInj.map(p=>`<span class="tag" style="background:#3a2a1a;color:#d4a87a;border-color:#7a5a3a;font-size:.75em;">📌 ${p}</span>`).join("")}
       </div>
-      ${activeConds.length ? `<div class="small" style="margin-top:3px;color:var(--dim);">Injury likelihood: ×${conditionInjuryModifier(h).toFixed(2)}</div>` : ""}
+      ${activeConds.length||chronicTags.length ? `<div class="small" style="margin-top:3px;color:var(--dim);">Injury likelihood: ×${conditionInjuryModifier(h).toFixed(2)}</div>` : ""}
+      ${careWarnings.length ? `<div style="margin-top:4px;">${careWarnings.map(w=>`<div class="small" style="color:var(--warn);">⚠️ ${w}</div>`).join("")}</div>` : ""}
     </div>` : "";
 
   // Tack
   const tackParts = [];
   if(h.tack?.saddle) tackParts.push(`Saddle: ${h.tack.saddle}`);
   if(h.tack?.bridle) tackParts.push(`Bridle: ${h.tack.bridle}`);
+  if(h.tack?.shoes)  tackParts.push(`Shoes: ${h.tack.shoes}`);
   if(h.tack?.other)  tackParts.push(h.tack.other);
   const tackBonusHtml = (h.tack?.bonuses||[]).length ? `<span style="color:var(--accent);"> (+${h.tack.bonuses.join(", ")})</span>` : "";
   const tackHtml = tackParts.length
@@ -1005,6 +1207,18 @@ function showTackModal(id){
       <div><label>Saddle</label><input id="tk_saddle" value="${h.tack.saddle||''}" placeholder="e.g. XC Saddle +2 Scope" /></div>
       <div><label>Bridle</label><input id="tk_bridle" value="${h.tack.bridle||''}" placeholder="e.g. Flash Bridle" /></div>
     </div>
+    <div style="margin-top:8px;"><label>Shoes</label>
+      <select id="tk_shoes">
+        <option value="">None / Barefoot</option>
+        <option value="Standard shoes" ${h.tack.shoes==="Standard shoes"?"selected":""}>Standard shoes</option>
+        <option value="Front shoes only" ${h.tack.shoes==="Front shoes only"?"selected":""}>Front shoes only</option>
+        <option value="Full set" ${h.tack.shoes==="Full set"?"selected":""}>Full set</option>
+        <option value="Egg-bar + wedge (navicular)" ${h.tack.shoes==="Egg-bar + wedge (navicular)"?"selected":""}>Egg-bar + wedge (navicular)</option>
+        <option value="Heel-lift therapeutic (laminitis)" ${h.tack.shoes==="Heel-lift therapeutic (laminitis)"?"selected":""}>Heel-lift therapeutic (laminitis)</option>
+        <option value="Glue-on shoes" ${h.tack.shoes==="Glue-on shoes"?"selected":""}>Glue-on shoes</option>
+        <option value="Barefoot trim" ${h.tack.shoes==="Barefoot trim"?"selected":""}>Barefoot trim</option>
+      </select>
+    </div>
     <div style="margin-top:8px;"><label>Other Tack / Equipment</label><input id="tk_other" value="${h.tack.other||''}" placeholder="e.g. Martingale, Bell boots, Breastplate" /></div>
     <div style="margin-top:8px;"><label>Stat Bonuses from Tack <span class="small">(e.g. +2 Scope, +1 Boldness)</span></label>
     <input id="tk_bonuses" value="${(h.tack.bonuses||[]).join(", ")}" placeholder="e.g. +2 Scope, +1 Boldness" /></div>
@@ -1013,10 +1227,291 @@ function showTackModal(id){
   `, (overlay)=>{
     h.tack.saddle = overlay.querySelector('#tk_saddle').value.trim();
     h.tack.bridle = overlay.querySelector('#tk_bridle').value.trim();
+    h.tack.shoes  = overlay.querySelector('#tk_shoes').value;
     h.tack.other  = overlay.querySelector('#tk_other').value.trim();
     const rawBonuses = overlay.querySelector('#tk_bonuses').value.trim();
     h.tack.bonuses = rawBonuses ? rawBonuses.split(",").map(s=>s.trim()).filter(Boolean) : [];
     h.tack.inventoryLink = overlay.querySelector('#tk_link').value.trim();
+    saveHorse(h); save(); render();
+  });
+}
+
+
+// ============================================
+// VET & FARRIER TAB
+// ============================================
+
+function renderVetFarrier(){
+  const wrap = el('div');
+  if(state.horses.length === 0){ wrap.appendChild(el('div','empty-msg','Add a horse first on the Stable Roster tab.')); return wrap; }
+
+  // ---- ROUTINE SHOTS ----
+  const vaccCard = el('div','card');
+  vaccCard.innerHTML = `
+    <h3>💉 Routine Vaccinations</h3>
+    <p class="small" style="color:var(--dim);margin-top:0;">Give all horses their annual shots. Reduces illness chance by ~60% for the next 365 days. All horses take the next day off — no training or competition.</p>
+    <div id="vacc_list">
+      ${state.horses.filter(h=>h.status!=="deceased").map(h=>{
+        const fc = h.vetCare||{};
+        const daysSince = fc.lastVaccineDay ? state.day - fc.lastVaccineDay : null;
+        const due = !fc.lastVaccineDay || daysSince >= 350;
+        const status = fc.lastVaccineDay
+          ? (fc.vaccineProtected ? `✅ Protected · last vaccinated Day ${fc.lastVaccineDay} (${daysSince}d ago)` : `⚠️ Protection expired — due for booster`)
+          : `❌ Never vaccinated`;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#15100c;border-radius:6px;margin-bottom:6px;">
+          <div><b>${h.name}</b> <span class="small">${status}</span></div>
+          ${due ? `<button class="secondary" data-act="vaccinate" data-id="${h.id}" style="margin:0;font-size:.8em;padding:5px 10px;">💉 Vaccinate</button>` : `<span class="small" style="color:var(--good);">Up to date</span>`}
+        </div>`;
+      }).join("")}
+    </div>
+    <button id="vacc_all" style="margin-top:8px;">💉 Vaccinate All Due Horses</button>
+    <div id="vacc_result" style="margin-top:6px;"></div>
+  `;
+  wrap.appendChild(vaccCard);
+
+  vaccCard.querySelector('#vacc_all').onclick = ()=>{
+    const due = state.horses.filter(h=>h.status!=="deceased" && (!h.vetCare?.lastVaccineDay || state.day - h.vetCare.lastVaccineDay >= 350));
+    if(!due.length){ vaccCard.querySelector('#vacc_result').innerHTML='<div class="result success">All horses are up to date!</div>'; return; }
+    due.forEach(h=>doVaccinate(h));
+    vaccCard.querySelector('#vacc_result').innerHTML=`<div class="result success">💉 ${due.map(h=>h.name).join(", ")} vaccinated! All take tomorrow off.</div>`;
+    save(); render();
+  };
+  vaccCard.querySelectorAll('[data-act="vaccinate"]').forEach(b=>{
+    b.onclick = ()=>{
+      const h = state.horses.find(x=>x.id===b.dataset.id);
+      if(h){ doVaccinate(h); save(); render(); }
+    };
+  });
+
+  // ---- FARRIER ----
+  const farrCard = el('div','card');
+  farrCard.innerHTML = `
+    <h3>🪝 Farrier Visits</h3>
+    <p class="small" style="color:var(--dim);margin-top:0;">Schedule every 45 days. The farrier will reshoe and may discover hoof issues. Existing hoof problems can also be treated.</p>
+    <div id="farr_list">
+      ${state.horses.filter(h=>h.status!=="deceased").map(h=>{
+        const fc = h.farrierCare||{};
+        const daysSince = fc.lastVisitDay ? state.day - fc.lastVisitDay : null;
+        const due = !fc.lastVisitDay || daysSince >= 45;
+        const issues = (fc.hoofIssues||[]);
+        const statusStr = fc.lastVisitDay
+          ? (due ? `⚠️ OVERDUE — last visit Day ${fc.lastVisitDay} (${daysSince}d ago)` : `✅ Last visit Day ${fc.lastVisitDay} · Next due Day ${fc.nextDueDay}`)
+          : `❌ No farrier visit on record`;
+        return `<div style="padding:8px;background:#15100c;border-radius:6px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><b>${h.name}</b><br><span class="small">${statusStr}</span>
+            ${issues.length ? `<div class="small" style="color:var(--warn);margin-top:2px;">🪝 Known issues: ${issues.join(", ")}</div>` : ""}
+            </div>
+            <button class="secondary" data-act="farrier" data-id="${h.id}" style="margin:0;font-size:.8em;padding:5px 10px;"${!due&&!issues.length?' disabled':''}>🪝 ${due?"Schedule Visit":"Treat Issues"}</button>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+  `;
+  wrap.appendChild(farrCard);
+
+  farrCard.querySelectorAll('[data-act="farrier"]').forEach(b=>{
+    b.onclick = ()=>{
+      const h = state.horses.find(x=>x.id===b.dataset.id);
+      if(h) showFarrierModal(h, farrCard);
+    };
+  });
+
+  // ---- TREATMENT (sick/injured horses) ----
+  const sickHorses = state.horses.filter(h=>h.status==="sick"||h.status==="injured");
+  if(sickHorses.length){
+    const treatCard = el('div','card');
+    treatCard.innerHTML = `
+      <h3>⚕️ Treatment Care</h3>
+      <p class="small" style="color:var(--dim);margin-top:0;">Log treatment sessions for sick or injured horses. Attach art or writing for full EXP + bonus Harmony — it builds trust during recovery.</p>
+      ${sickHorses.map(h=>`
+        <div style="padding:10px;background:#15100c;border-radius:6px;margin-bottom:10px;">
+          <div style="margin-bottom:6px;"><b>${h.name}</b> <span class="tag ${h.status}">${h.status} · ${h.statusDays}d left</span></div>
+          <div class="row">
+            <div><label>Art logged? (optional)</label>
+              <select data-treat-art="${h.id}">
+                <option value="">No art this time</option>
+                ${Object.keys(ART_EXP).map(k=>`<option value="${k}">${k} (+${ART_EXP[k]} EXP)</option>`).join("")}
+              </select>
+            </div>
+            <div><label>Literature word count (optional)</label>
+              <input type="number" data-treat-lit="${h.id}" min="0" placeholder="min 200 for EXP" />
+            </div>
+          </div>
+          <div style="margin-top:6px;"><label>Link to art/writing (optional)</label>
+            <input type="text" data-treat-link="${h.id}" placeholder="https://…" />
+          </div>
+          <button data-act="log-treatment" data-id="${h.id}" style="margin-top:8px;font-size:.85em;">💊 Log Treatment Session</button>
+          <div data-treat-result="${h.id}" style="margin-top:4px;"></div>
+        </div>`).join("")}
+    `;
+    wrap.appendChild(treatCard);
+
+    treatCard.querySelectorAll('[data-act="log-treatment"]').forEach(b=>{
+      b.onclick = ()=>{
+        const h = state.horses.find(x=>x.id===b.dataset.id);
+        if(!h) return;
+        const artType  = treatCard.querySelector(`[data-treat-art="${h.id}"]`).value;
+        const litWords = parseInt(treatCard.querySelector(`[data-treat-lit="${h.id}"]`).value)||0;
+        const link     = treatCard.querySelector(`[data-treat-link="${h.id}"]`).value.trim();
+        const res      = treatCard.querySelector(`[data-treat-result="${h.id}"]`);
+        let expGain = 0, harmonyGain = 0;
+        const sources = [];
+        if(artType && ART_EXP[artType]){
+          expGain += ART_EXP[artType]; sources.push(`${artType} (+${ART_EXP[artType]})`);
+          harmonyGain = 2; // bonus harmony for treatment art
+        }
+        const litExp = calcLitExp(litWords);
+        if(litExp > 0){
+          expGain += litExp; sources.push(`Literature (${litWords} words) (+${litExp})`);
+          harmonyGain += 1;
+        }
+        h.exp += expGain;
+        if(harmonyGain){ h.stats.harmony = (h.stats.harmony||0) + harmonyGain; }
+        checkLevelUp(h);
+        const entry = {
+          day: state.day, type:"treatment",
+          label: `Treatment (${h.status})`,
+          art: artType||null, lit: litWords?`Literature (${litWords} words)`:null,
+          bonuses:[], exp:expGain, link:link||null,
+        };
+        h.artLog.unshift(entry);
+        saveArtEntry(h, entry);
+        addLog(`💊 ${h.name} received treatment care${expGain?` — +${expGain} EXP${harmonyGain?`, +${harmonyGain} Harmony`:""} (${sources.join(", ")})`:"."}`);
+        saveHorse(h); save();
+        res.innerHTML = `<div class="result success">✅ Treatment logged!${expGain?` +${expGain} EXP${harmonyGain?`, +${harmonyGain} Harmony`:""}`:""}</div>`;
+      };
+    });
+  }
+
+  // ---- CHRONIC CONDITION MANAGEMENT ----
+  const chronicHorses = state.horses.filter(h=>h.chronicCare && (h.chronicCare.navicular||h.chronicCare.laminitis||h.chronicCare.arthritis));
+  if(chronicHorses.length){
+    const chronCard = el('div','card');
+    let chronHtml = `<h3>🏥 Chronic Condition Management</h3>`;
+    chronicHorses.forEach(h=>{
+      const cc = h.chronicCare;
+      chronHtml += `<div style="padding:10px;background:#15100c;border-radius:6px;margin-bottom:10px;"><b>${h.name}</b><br>`;
+      if(cc.navicular){
+        const ospDue = cc.osphosDue ? `Day ${cc.osphosDue} (in ${cc.osphosDue - state.day} days)` : "Not yet scheduled";
+        chronHtml += `<div class="small" style="margin-top:4px;">🦶 <b>Navicular</b> — Egg-bar shoes: ${cc.navicularShoes?"✅":"❌"} · OSPHOS next: ${ospDue}</div>
+          <button data-act="give-osphos" data-id="${h.id}" class="secondary" style="font-size:.78em;margin-top:4px;padding:4px 8px;" ${cc.osphosDue && state.day < cc.osphosDue-7?' disabled':''}>💉 Administer OSPHOS</button>`;
+      }
+      if(cc.laminitis){
+        chronHtml += `<div class="small" style="margin-top:4px;">🦶 <b>Laminitis</b> (${cc.laminitisStage||"chronic"}) — Therapeutic shoes: ${cc.laminitisShoes?"✅":"❌"} · Strict diet: ${cc.strictDiet?"✅":"❌"} · Dry paddock: ${cc.dryPaddock?"✅":"❌"}</div>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <button data-act="toggle-dry-paddock" data-id="${h.id}" class="secondary" style="font-size:.78em;padding:4px 8px;">${cc.dryPaddock?"🌿 Return to Pasture (DANGER)":"🏠 Enforce Dry Paddock"}</button>
+            <button data-act="toggle-strict-diet" data-id="${h.id}" class="secondary" style="font-size:.78em;padding:4px 8px;">${cc.strictDiet?"🌾 Relax Diet":"🌾 Enforce Strict Diet"}</button>
+          </div>`;
+      }
+      if(cc.arthritis){
+        const labels = ["Mild","Moderate","Severe","Retirement-level"];
+        const adeqDue = cc.adequanDue ? `Day ${cc.adequanDue} (in ${cc.adequanDue - state.day} days)` : "Not yet scheduled";
+        chronHtml += `<div class="small" style="margin-top:4px;">🦴 <b>Arthritis</b> (${labels[cc.arthritisSeverity||0]}) — Adequan next: ${adeqDue}</div>
+          <button data-act="give-adequan" data-id="${h.id}" class="secondary" style="font-size:.78em;margin-top:4px;padding:4px 8px;" ${cc.adequanDue && state.day < cc.adequanDue-3?' disabled':''}>💉 Administer Adequan</button>`;
+      }
+      chronHtml += `</div>`;
+    });
+    chronCard.innerHTML = chronHtml;
+    wrap.appendChild(chronCard);
+
+    chronCard.querySelectorAll('[data-act="give-osphos"]').forEach(b=>{
+      b.onclick = ()=>{
+        const h = state.horses.find(x=>x.id===b.dataset.id);
+        if(!h) return;
+        const interval = rand(90,180);
+        h.chronicCare.osphosDue = state.day + interval;
+        h.chronicCare.osphosMissed = 0;
+        addLog(`💉 ${h.name} received their OSPHOS injection. Next dose due in ${interval} days (Day ${h.chronicCare.osphosDue}).`);
+        saveHorse(h); save(); render();
+      };
+    });
+    chronCard.querySelectorAll('[data-act="give-adequan"]').forEach(b=>{
+      b.onclick = ()=>{
+        const h = state.horses.find(x=>x.id===b.dataset.id);
+        if(!h) return;
+        h.chronicCare.adequanDue = state.day + 30;
+        h.chronicCare.adequanMissed = 0;
+        addLog(`💉 ${h.name} received their Adequan injection. Next dose due Day ${h.chronicCare.adequanDue}.`);
+        saveHorse(h); save(); render();
+      };
+    });
+    chronCard.querySelectorAll('[data-act="toggle-dry-paddock"]').forEach(b=>{
+      b.onclick = ()=>{
+        const h = state.horses.find(x=>x.id===b.dataset.id);
+        if(!h) return;
+        if(h.chronicCare.dryPaddock){
+          if(!confirm(`⚠️ WARNING: Returning ${h.name} to pasture with an active laminitis diagnosis risks catastrophic worsening. Are you sure?`)) return;
+        }
+        h.chronicCare.dryPaddock = !h.chronicCare.dryPaddock;
+        addLog(`🏠 ${h.name} is now ${h.chronicCare.dryPaddock?"in a dry paddock (no grass access)":"returned to pasture — monitor closely!"}`);
+        saveHorse(h); save(); render();
+      };
+    });
+    chronCard.querySelectorAll('[data-act="toggle-strict-diet"]').forEach(b=>{
+      b.onclick = ()=>{
+        const h = state.horses.find(x=>x.id===b.dataset.id);
+        if(!h) return;
+        h.chronicCare.strictDiet = !h.chronicCare.strictDiet;
+        addLog(`🌾 ${h.name} is now on a ${h.chronicCare.strictDiet?"strict timothy-only diet (no alfalfa, no sugary treats, low-carb)":"relaxed diet — monitor for laminitis flares!"}`);
+        saveHorse(h); save(); render();
+      };
+    });
+  }
+
+  return wrap;
+}
+
+function doVaccinate(h){
+  if(!h.vetCare) h.vetCare = {};
+  h.vetCare.lastVaccineDay = state.day;
+  h.vetCare.vaccineProtected = true;
+  h.vetCare._vaccineReminded = false;
+  // Force a rest day tomorrow — mark as resting
+  if(h.status === "healthy"){ h.status = "sick"; h.statusDays = 1; }
+  addLog(`💉 ${h.name} received their routine vaccinations on Day ${state.day}. They'll need tomorrow off to rest.`);
+}
+
+function showFarrierModal(h, container){
+  const fc = h.farrierCare || {};
+  const issues = fc.hoofIssues||[];
+  showModal(`🪝 Farrier Visit — ${h.name}`, `
+    <p class="small" style="color:var(--dim);margin-top:0;">The farrier will reshoe ${h.name} and check for hoof issues. There's a chance they discover something new.</p>
+    ${h.chronicCare?.navicular && !h.chronicCare?.navicularShoes ? `<div class="result fail" style="margin-bottom:8px;">⚠️ Navicular diagnosed — farrier should fit egg-bar shoes with wedge pads.</div>` : ""}
+    ${h.chronicCare?.laminitis && !h.chronicCare?.laminitisShoes ? `<div class="result fail" style="margin-bottom:8px;">⚠️ Laminitis diagnosed — farrier should fit therapeutic heel-lift shoes.</div>` : ""}
+    ${issues.length ? `<div class="small" style="color:var(--warn);margin-bottom:8px;">🪝 Known issues to treat: ${issues.join(", ")}</div>` : ""}
+    <label>Shoe type (optional)</label>
+    <select id="farr_shoes">
+      <option value="">Standard shoes</option>
+      <option value="Egg-bar + wedge (navicular)">Egg-bar + wedge (navicular)</option>
+      <option value="Heel-lift therapeutic (laminitis)">Heel-lift therapeutic (laminitis)</option>
+      <option value="Barefoot trim">Barefoot trim</option>
+      <option value="Front shoes only">Front shoes only</option>
+      <option value="Full set">Full set</option>
+      <option value="Glue-on shoes">Glue-on shoes</option>
+    </select>
+    <div style="margin-top:8px;"><label>Notes (optional)</label><input id="farr_notes" placeholder="e.g. Treated thrush, packed sole" /></div>
+  `, (overlay)=>{
+    if(!h.farrierCare) h.farrierCare = {hoofIssues:[]};
+    h.farrierCare.lastVisitDay = state.day;
+    h.farrierCare.nextDueDay   = state.day + 45;
+    h.farrierCare._reminded    = false;
+    const shoes = overlay.querySelector('#farr_shoes').value;
+    const notes = overlay.querySelector('#farr_notes').value.trim();
+    if(shoes){ if(!h.tack) h.tack={};  h.tack.shoes = shoes; }
+    // Fit special shoes for conditions
+    if(shoes.includes("navicular")) h.chronicCare.navicularShoes = true;
+    if(shoes.includes("laminitis")) h.chronicCare.laminitisShoes = true;
+    // RNG hoof issue discovery
+    let discovered = "";
+    if(Math.random() < 0.25){
+      const issue = pick(HOOF_ISSUES.filter(i=>!h.farrierCare.hoofIssues.includes(i)));
+      if(issue){ h.farrierCare.hoofIssues.push(issue); discovered = ` Discovered: ${issue}.`; }
+    } else if(h.farrierCare.hoofIssues.length && Math.random() < 0.5){
+      const treated = h.farrierCare.hoofIssues.shift();
+      discovered = ` Treated and cleared: ${treated}.`;
+    }
+    addLog(`🪝 Farrier visited ${h.name} on Day ${state.day}. ${shoes?`Shoes: ${shoes}.`:"Reshod as normal."} Next visit due Day ${h.farrierCare.nextDueDay}.${discovered}${notes?" Note: "+notes:""}` );
     saveHorse(h); save(); render();
   });
 }
@@ -1115,7 +1610,7 @@ function render(){
       <div><span class="day">${todayLabel(state.day)}</span></div>
     </div>
     <div class="tabs">
-      ${["roster","train","compete","log","bank"].map(t=>`<div class="tab ${activeTab===t?'active':''}" data-tab="${t}">${t==='roster'?'Stable Roster':t==='train'?'Training':t==='compete'?'Competitions':t==='bank'?'💰 Bank':'Day Log'}</div>`).join("")}
+      ${["roster","train","compete","vet","log","bank"].map(t=>`<div class="tab ${activeTab===t?'active':''}" data-tab="${t}">${t==='roster'?'Stable Roster':t==='train'?'Training':t==='compete'?'Competitions':t==='vet'?'🩺 Vet & Farrier':t==='bank'?'💰 Bank':'Day Log'}</div>`).join("")}
       <div style="flex:1"></div>
       <button data-act="nextday" style="margin-top:0;">⏭ Advance Day</button>
     </div>
@@ -1131,6 +1626,8 @@ function render(){
     content.appendChild(renderCompete());
   } else if(activeTab === "log"){
     content.appendChild(renderLog());
+  } else if(activeTab === "vet"){
+    content.appendChild(renderVetFarrier());
   } else if(activeTab === "bank"){
     renderBank(content);
   }
