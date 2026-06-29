@@ -10,7 +10,7 @@
 <style>
   html, body{ background:#1b1410; margin:0; padding:0; }
   #app{
-    --bg:#1b1410; --panel:#241a14; --panel2:#2c2118; --accent:#c98a3a; --accent2:#7a9b6e;
+    --bg:#1b1410; --panel:#241a14; --panel2:#2c2118; --accent:#c98a3a; --accent2:#7a9b6e; --warn:#d4a030;
     --text:#f1e6d8; --dim:#b5a392; --danger:#b1473f; --warn:#c9a23a; --good:#7a9b6e;
     font-family:'Georgia','Garamond',serif; color:var(--text); background:var(--bg);
     padding:18px; border-radius:10px; max-width:980px; margin:0 auto;
@@ -75,6 +75,14 @@
   #app .slot{width:22px; height:22px; border-radius:50%; border:1px solid var(--accent); display:flex; align-items:center; justify-content:center; font-size:.7em;}
   #app .slot.filled{background:var(--accent); color:#15100c;}
   #app .empty-msg{color:var(--dim); font-style:italic; padding:20px; text-align:center;}
+  #modal-overlay input, #modal-overlay select, #modal-overlay textarea {
+    background:#15100c; border:1px solid #4a392a; color:var(--text); border-radius:5px; padding:7px 10px; width:100%; box-sizing:border-box; font-size:.9em; margin-top:4px;
+  }
+  #modal-overlay label { font-size:.8em; text-transform:uppercase; letter-spacing:.04em; color:var(--dim); display:block; }
+  #modal-overlay .row { display:flex; gap:10px; }
+  #modal-overlay .row > div { flex:1; }
+  #modal-overlay button { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:.9em; background:var(--accent); color:#241a14; font-weight:bold; }
+  #modal-overlay button.secondary { background:#2c2118; color:var(--text); border:1px solid #4a392a; }
 </style>
 <script>
 (function(){
@@ -83,17 +91,18 @@ const STATS = ["stamina","strength","scope","speed","handiness","boldness","bala
 const STAT_LABELS = {stamina:"Stamina",strength:"Strength",scope:"Scope",speed:"Speed",handiness:"Handiness",boldness:"Boldness",balance:"Balance",gaits:"Gaits",harmony:"Harmony"};
 
 const LEVEL_TABLE = {
-  1:{exp:0, bonus:0, slots:0},
-  2:{exp:50, bonus:2, slots:1},
-  3:{exp:100, bonus:2, slots:0},
-  4:{exp:150, bonus:3, slots:1},
-  5:{exp:200, bonus:3, slots:1},
-  6:{exp:250, bonus:3, slots:1},
-  7:{exp:300, bonus:4, slots:1},
-  8:{exp:500, bonus:4, slots:1},
-  9:{exp:750, bonus:4, slots:1},
+  1:{exp:0,    bonus:0, slots:2},
+  2:{exp:50,   bonus:2, slots:1},
+  3:{exp:100,  bonus:2, slots:1},
+  4:{exp:150,  bonus:3, slots:1},
+  5:{exp:200,  bonus:3, slots:1},
+  6:{exp:250,  bonus:3, slots:1},
+  7:{exp:300,  bonus:4, slots:1},
+  8:{exp:500,  bonus:4, slots:1},
+  9:{exp:750,  bonus:4, slots:1},
   10:{exp:1000, bonus:5, slots:2},
 };
+// Breeding slots per level: 1→2, 2→3, 3→4 ... 10→12 (cumulative)
 
 const TRAININGS = [
   {id:"bonding", name:"Bonding", stats:{harmony:3}, prompt:"Draw or write your horse and handler sharing a quiet bonding moment — grooming, feeding, or just leaning in close together. Both subjects must be visible."},
@@ -110,7 +119,23 @@ const TRAININGS = [
   {id:"circling", name:"Circling", stats:{balance:2,strength:2,handiness:2}, prompt:"Draw your horse tracking a circle around a cone or barrel at trot or canter."},
   {id:"grounddrive", name:"Ground Driving", stats:{strength:3,stamina:3,harmony:3}, prompt:"Depict your horse ground-driving with long lines, pulling a light cart or weighted object."},
   {id:"desensitize", name:"Object Desensitization", stats:{boldness:3,harmony:3}, prompt:"Show your horse calmly facing something new and a little spooky — a tarp, a strange jump, an unfamiliar corner."},
-  {id:"equibreak", name:"Equibreak", stats:{harmony:3}, prompt:"Depict a breaking milestone appropriate to your horse's age — weaning, first halter, first tack, first rider, or first solo work under saddle.", foalOnly:true}
+  {id:"equibreak",   name:"Equibreak",          stats:{harmony:3}, prompt:"Depict a breaking milestone appropriate to your horse's age — weaning, first halter, first tack, first rider, or first solo work under saddle.", foalOnly:true},
+  {id:"crosscountry", name:"XC School",           stats:{boldness:4,scope:4,stamina:4}, prompt:"Show your horse tackling a cross-country style fence or water complex out in open terrain."},
+  {id:"waterjump",    name:"Water Complex",        stats:{boldness:5,stamina:3}, prompt:"Depict your horse entering, splashing through, or exiting a water jump — rider must be shown and staying with the horse."},
+  {id:"ditch",        name:"Ditch & Coffin",       stats:{boldness:5,scope:3}, prompt:"Show your horse jumping a ditch, coffin combination, or sunken road — somewhere it has to trust its rider and commit."},
+  {id:"trail",        name:"Trail Ride",            stats:{boldness:2,harmony:3,stamina:2}, prompt:"Depict your horse and rider out on a relaxed trail — through forest, along a beach, across open fields, or up a mountain path."},
+  {id:"swim",         name:"Swimming / Water Work", stats:{stamina:5,strength:3,boldness:2}, prompt:"Show your horse swimming in open water or walking through a deep creek or river. No rider required."},
+  {id:"liberty",      name:"Liberty Work",          stats:{harmony:5,boldness:2}, prompt:"Depict your horse working completely at liberty with no tack — joining up with a handler, performing movements free, or playing in an open space."},
+  {id:"horsemanship", name:"Natural Horsemanship",  stats:{harmony:4,boldness:3}, prompt:"Show a join-up, leading without a halter, or a pressure-and-release groundwork session that demonstrates deep communication."},
+  {id:"stretching",   name:"Stretching / Cool Down",stats:{balance:2,harmony:2,stamina:2}, prompt:"Depict a post-workout stretch — carrot stretches, passive stretching with a groom, or your horse cooling down at a slow walk."},
+  {id:"stall_rest",   name:"Stall Rest Recovery",   stats:{harmony:1}, prompt:"Draw your horse during a period of stall rest — being hand-grazed, receiving treatment, or simply resting in their stall while healing."},
+  {id:"snow_work",    name:"Winter / Snow Work",    stats:{boldness:3,balance:3,stamina:3}, prompt:"Show your horse working in winter conditions — snow on the ground, icy footing, or a cold-weather hack through a frosted landscape."},
+  {id:"bareback",     name:"Bareback Riding",       stats:{balance:4,harmony:3}, prompt:"Depict rider and horse working without a saddle — must show the connection between seat and horse. Any gait or activity."},
+  {id:"show_prep",    name:"Show Prep / Grooming",  stats:{harmony:2}, prompt:"Show your horse being bathed, braided, blanketed, or otherwise prepared for a show — grooming in detail with handler present."},
+  {id:"pasture",      name:"Pasture / Herd Time",   stats:{harmony:3,boldness:2}, prompt:"Depict your horse loose in a field — with herd mates, playing, or simply grazing at peace. No handler required."},
+  {id:"vet_farrier",  name:"Vet / Farrier Visit",   stats:{harmony:2,boldness:2}, prompt:"Show your horse during a vet exam, farrier appointment, or dental float — standing patiently or working through nervousness."},
+  {id:"jumpcourse",   name:"Stadium Jumping Course", stats:{scope:4,handiness:4,balance:3}, prompt:"Depict your horse jumping a full stadium course — colored poles, combinations, oxers — rider and horse mid-jump."},
+  {id:"hack_canter",  name:"Forward Canter Hack",   stats:{speed:3,stamina:3,boldness:2}, prompt:"Show your horse in a big forward canter across open ground — not a gallop, but covering ground freely and openly."},
 ];
 
 const DISCIPLINES = {
@@ -167,18 +192,47 @@ function todayLabel(d){ return "Day " + d; }
 function newHorse(data){
   let stats = {};
   STATS.forEach(s=> stats[s] = 10);
+  const age = Number(data.age)||1;
+  const birthYear = (data.birthYear) ? Number(data.birthYear) : (new Date().getFullYear() - age);
   return {
-    id: uid(), name: data.name, age: Number(data.age)||1, breed: data.breed,
-    stage: data.stage || (Number(data.age)>=3 ? "adult" : Number(data.age)>=2 ? "two-year-old" : Number(data.age)>=1 ? "yearling" : "foal"),
+    id: uid(), name: data.name, age: age, breed: data.breed,
+    joinedOnDay: data.joinedOnDay !== undefined ? data.joinedOnDay : (typeof state !== 'undefined' ? state.day : 1),
+    birthYear: birthYear,
+    stage: data.stage || ageToStage(age),
+    gender: data.gender || "",
+    color: data.color || "",
+    geno: data.geno || "",
+    traits: data.traits || "",
+    mutations: data.mutations || "",
     level: 1, exp: 0, stats: stats,
-    breedingSlots: 0, breedingFilled: 0,
+    breedingSlots: LEVEL_TABLE[1].slots, breedingFilled: 0,
     status: "healthy", statusDays: 0,
     daysOwned: 0,
     eventsEnabled: data.eventsEnabled !== false,
+    agingEnabled: data.agingEnabled !== false,
+    // Health conditions (all optional)
+    conditions: {
+      blind: data.conditions?.blind || false,
+      deaf: data.conditions?.deaf || false,
+      asthma: data.conditions?.asthma || false,
+      cushings: data.conditions?.cushings || false,
+      kissingSpine: data.conditions?.kissingSpine || false,
+      suspensory: data.conditions?.suspensory || false,   // prior suspensory
+      pastInjuries: data.conditions?.pastInjuries || [],  // free-text list
+    },
+    // Tack
+    tack: data.tack || { saddle:"", bridle:"", other:"", bonuses:[] },
     profileImage: null,
     artLog: [],
     history: [],
   };
+}
+
+function ageToStage(age){
+  if(age < 1) return "foal";
+  if(age < 2) return "yearling";
+  if(age < 3) return "two-year-old";
+  return "adult";
 }
 
 function addLog(msg, dayOverride){
@@ -291,9 +345,22 @@ function checkLevelUp(horse){
     STATS.forEach(s=> horse.stats[s] += t.bonus);
     horse.breedingSlots += t.slots;
     leveled = true;
-    addLog(`🎉 ${horse.name} reached Level ${horse.level}! +${t.bonus} to all stats` + (t.slots? `, +${t.slots} breeding slot(s) unlocked` : "") + ".");
+    const targetSlots = Object.values(LEVEL_TABLE).slice(0, horse.level).reduce((a,l)=>a+l.slots, 0);
+    addLog(`🎉 ${horse.name} reached Level ${horse.level}! +${t.bonus} to all stats` + (t.slots? `, +${t.slots} breeding slot(s) unlocked (total: ${horse.breedingSlots})` : "") + ".");
   }
   return leveled;
+}
+
+function conditionInjuryModifier(h){
+  // Returns an injury chance multiplier based on active conditions
+  let mod = 1.0;
+  if(h.conditions?.suspensory) mod += 0.4;  // prior suspensory = 40% more likely
+  if(h.conditions?.kissingSpine) mod += 0.25;
+  if(h.conditions?.asthma) mod += 0.1;
+  if(h.conditions?.cushings) mod += 0.2;
+  if(h.conditions?.blind) mod += 0.15;     // more likely to spook/trip
+  if((h.conditions?.pastInjuries||[]).length > 0) mod += 0.1 * Math.min((h.conditions.pastInjuries.length), 3);
+  return mod;
 }
 
 const AILMENT_EVENTS = [
@@ -360,10 +427,15 @@ function advanceDay(){
       }
       // otherwise: a quiet day for this horse — no individual log entry
     }
-    // birthday / aging every 365 days
-    if(h.daysOwned > 0 && h.daysOwned % 365 === 0){
-      h.age += 1;
-      addLog(`🎂 ${h.name} has turned ${h.age} years old.`, endingDay);
+    // Age up: every 365 days after the day they joined (only if agingEnabled)
+    if(h.agingEnabled !== false){
+      const joined = h.joinedOnDay !== undefined ? h.joinedOnDay : 1;
+      const daysSinceJoiningEnding = endingDay - joined;
+      if(daysSinceJoiningEnding > 0 && daysSinceJoiningEnding % 365 === 0){
+        h.age += 1;
+        h.stage = ageToStage(h.age);
+        addLog(`🎂 ${h.name} has turned ${h.age} years old (${h.stage})! — Day ${endingDay} marks their anniversary in the stable.`, endingDay);
+      }
     }
   });
   // if nothing horse-specific happened today, log one generic end-of-day line
@@ -543,7 +615,7 @@ function applyTraining(horseId, trainingId, artType, litWordCount, bonusKeys, li
     h.stats[bonusStat] += 1;
     h.exp += bonusExp;
   } else if(beat.category === "mishap" && h.eventsEnabled !== false){
-    if(Math.random() < 0.35){
+    if(Math.random() < 0.35 * conditionInjuryModifier(h)){
       injured = true;
       h.status = "injured"; h.statusDays = rand(2,5);
     }
@@ -609,7 +681,7 @@ function runCompetition(horseId, discipline, difficulty, artType, litWordCount, 
     const placeExp = {1:4,2:3,3:2}[placement] || 1;
     expGain += placeExp;
   } else {
-    if(h.eventsEnabled !== false && Math.random() < 0.22){
+    if(h.eventsEnabled !== false && Math.random() < 0.22 * conditionInjuryModifier(h)){
       injured = true;
       h.status = "injured"; h.statusDays = rand(4,9);
     }
@@ -699,6 +771,10 @@ function artLogEntryHTML(entry){
 }
 
 function horseCardHTML(h){
+  // ensure conditions/tack exist on old horses loaded from sheet
+  if(!h.conditions) h.conditions = {};
+  if(!h.tack) h.tack = {saddle:"",bridle:"",other:"",bonuses:[]};
+
   const nextLevelExp = h.level < 10 ? LEVEL_TABLE[h.level+1].exp : LEVEL_TABLE[10].exp;
   const prevExp = LEVEL_TABLE[h.level].exp;
   const span = Math.max(1, nextLevelExp - prevExp);
@@ -707,54 +783,244 @@ function horseCardHTML(h){
     : h.status==="retired" ? `<span class="tag retired">🚫 retired</span>`
     : h.status==="deceased" ? `<span class="tag deceased">🖤 deceased</span>`
     : `<span class="tag ${h.status}">${h.status} · ${h.statusDays}d left</span>`;
-  const shieldTag = h.eventsEnabled===false ? `<span class="tag" style="background:#3a5a4a; color:#cdebd9; border-color:#5a8a6e;">🛡️ Protected</span>` : "";
+  const shieldTag = h.eventsEnabled===false ? `<span class="tag" style="background:#3a5a4a;color:#cdebd9;border-color:#5a8a6e;">🛡️ Protected</span>` : "";
+
+  // Breeding slots
   let slots = "";
   for(let i=0;i<h.breedingSlots;i++) slots += `<div class="slot ${i<h.breedingFilled?'filled':''}">${i+1}</div>`;
   if(h.breedingSlots===0) slots = `<span class="small">none unlocked yet</span>`;
+
   const photoHtml = h.profileImage
     ? `<img src="${h.profileImage}" class="horse-photo" />`
     : `<div class="horse-photo horse-photo-placeholder">🐴</div>`;
   const artLogOpen = expandedArtLogs.has(h.id);
   const artLogHtml = artLogOpen
-    ? `<div class="artlog-panel">${h.artLog.length ? h.artLog.map(artLogEntryHTML).join("") : '<div class="small">No art or literature logged yet — link some when you train or compete!</div>'}</div>`
+    ? `<div class="artlog-panel">${h.artLog.length ? h.artLog.map(artLogEntryHTML).join("") : '<div class="small">No art logged yet.</div>'}</div>`
     : "";
+
+  // Reference sheet
   const refLinkHtml = h.referenceLink
-    ? `<div class="small" style="margin-top:4px;"><a href="${h.referenceLink}" target="_blank" rel="noopener" class="artlog-link">🔗 View Reference Sheet</a></div>`
-    : "";
+    ? `<a href="${h.referenceLink}" target="_blank" rel="noopener" class="artlog-link">🔗 View</a>` : "";
   const refImgHtml = h.referenceImage
-    ? `<div style="margin-top:8px;"><div class="small" style="margin-bottom:4px;">📋 Registration / Reference Sheet${refLinkHtml ? " · " + refLinkHtml.trim() : ""}</div><img src="${h.referenceImage}" style="max-width:100%; max-height:220px; border-radius:6px; border:1px solid #4a392a; object-fit:contain;" /><div style="margin-top:6px; display:flex; gap:6px; align-items:center;"><input type="text" data-ref-link-input="${h.id}" placeholder="Paste link to ref sheet (DeviantArt, Toyhouse…)" value="${h.referenceLink||""}" style="flex:1; font-size:.82em;" /><button class="secondary" data-act="save-ref-link" data-id="${h.id}" style="margin-top:0; font-size:.78em; padding:4px 8px; white-space:nowrap;">💾 Save Link</button></div></div>`
-    : `<div class="small" style="margin-top:8px; color:var(--dim);">📋 No registration / reference sheet uploaded yet.</div>`;
+    ? `<div style="margin-top:8px;"><div class="small" style="margin-bottom:4px;">📋 Registration / Reference Sheet ${refLinkHtml}</div>
+       <img src="${h.referenceImage}" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #4a392a;object-fit:contain;" />
+       <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+         <input type="text" data-ref-link-input="${h.id}" placeholder="Paste link to ref sheet…" value="${h.referenceLink||""}" style="flex:1;font-size:.82em;" />
+         <button class="secondary" data-act="save-ref-link" data-id="${h.id}" style="margin-top:0;font-size:.78em;padding:4px 8px;white-space:nowrap;">💾 Save Link</button>
+       </div></div>`
+    : `<div class="small" style="margin-top:8px;color:var(--dim);">📋 No reference sheet uploaded yet.</div>`;
+
+  // Genetics / info section
+  const infoRows = [];
+  if(h.gender)    infoRows.push(`<span><b>Gender:</b> ${h.gender}</span>`);
+  if(h.color)     infoRows.push(`<span><b>Color:</b> ${h.color}</span>`);
+  if(h.geno)      infoRows.push(`<span><b>Geno:</b> ${h.geno}</span>`);
+  if(h.traits)    infoRows.push(`<span><b>Traits:</b> ${h.traits}</span>`);
+  if(h.mutations) infoRows.push(`<span><b>Mutations/Markings:</b> ${h.mutations}</span>`);
+  if(h.birthYear) infoRows.push(`<span><b>Birth Year:</b> ${h.birthYear}</span>`);
+  const infoHtml = infoRows.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px;font-size:.83em;">${infoRows.join("")}</div>` : "";
+
+  // Conditions
+  const COND_LABELS = {blind:"👁️ Blind",deaf:"👂 Deaf",asthma:"💨 Asthma",cushings:"🧪 Cushing's",kissingSpine:"🦴 Kissing Spine",suspensory:"⚠️ Prior Suspensory"};
+  const activeConds = Object.entries(h.conditions||{}).filter(([k,v])=>v===true && COND_LABELS[k]);
+  const pastInj = (h.conditions?.pastInjuries||[]);
+  const condHtml = (activeConds.length || pastInj.length) ? `
+    <div style="margin-top:6px;">
+      <div class="small" style="color:var(--warn);font-weight:bold;margin-bottom:3px;">⚕️ Health Conditions</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${activeConds.map(([k])=>`<span class="tag" style="background:#4a1a1a;color:#e8a0a0;border-color:#8a3a3a;font-size:.75em;">${COND_LABELS[k]}</span>`).join("")}
+        ${pastInj.map(p=>`<span class="tag" style="background:#3a2a1a;color:#d4a87a;border-color:#7a5a3a;font-size:.75em;">📌 ${p}</span>`).join("")}
+      </div>
+      ${activeConds.length ? `<div class="small" style="margin-top:3px;color:var(--dim);">Injury likelihood: ×${conditionInjuryModifier(h).toFixed(2)}</div>` : ""}
+    </div>` : "";
+
+  // Tack
+  const tackParts = [];
+  if(h.tack?.saddle) tackParts.push(`Saddle: ${h.tack.saddle}`);
+  if(h.tack?.bridle) tackParts.push(`Bridle: ${h.tack.bridle}`);
+  if(h.tack?.other)  tackParts.push(h.tack.other);
+  const tackBonusHtml = (h.tack?.bonuses||[]).length ? `<span style="color:var(--accent);"> (+${h.tack.bonuses.join(", ")})</span>` : "";
+  const tackHtml = tackParts.length
+    ? `<div style="margin-top:6px;" class="small">🏇 <b>Tack:</b> ${tackParts.join(" · ")}${tackBonusHtml}</div>`
+    : `<div style="margin-top:6px;" class="small" style="color:var(--dim);">🏇 No tack recorded.</div>`;
+
   return `
   <div class="horse-card">
     <div class="horse-top-row">
       <div class="horse-photo-wrap">
         ${photoHtml}
         <input type="file" accept="image/*" data-photo-input="${h.id}" style="display:none;" />
-        <button class="secondary" data-act="upload-photo" data-id="${h.id}" style="margin-top:4px; font-size:.75em; padding:4px 8px;">📷 ${h.profileImage?'Change':'Upload'}</button>
+        <button class="secondary" data-act="upload-photo" data-id="${h.id}" style="margin-top:4px;font-size:.75em;padding:4px 8px;">📷 ${h.profileImage?'Change':'Upload'}</button>
       </div>
       <div style="flex:1;">
         <div class="horse-head">
           <div><span class="name">${h.name}</span> ${statusTag} ${shieldTag} <span class="tag">Lvl ${h.level}</span></div>
-          <div class="small">${h.breed} · Age ${h.age} (${h.stage})</div>
+          <div class="small">${h.breed}${h.gender?' · '+h.gender:''} · Age ${h.age}${h.birthYear?' (b.'+h.birthYear+')':''} (${h.stage})</div>
+          ${h.agingEnabled===false
+            ? '<div class="small" style="color:var(--dim);">🎂 Auto-aging disabled — age will not change unless re-enabled.</div>'
+            : `<div class="small" style="color:var(--dim);">🎂 Next birthday: Day ${(h.joinedOnDay||1) + (Math.floor((state.day-(h.joinedOnDay||1))/365)+1)*365} (in ${((h.joinedOnDay||1) + (Math.floor((state.day-(h.joinedOnDay||1))/365)+1)*365) - state.day} days)</div>`
+          }
         </div>
         <div class="small">EXP: ${h.exp} / ${h.level<10?LEVEL_TABLE[h.level+1].exp:LEVEL_TABLE[10].exp+' (max)'}</div>
         <div class="expbar-bg"><div class="expbar-fill" style="width:${pct}%"></div></div>
+        ${infoHtml}
       </div>
     </div>
     ${statBarsHTML(h)}
+    ${condHtml}
+    ${tackHtml}
     <div class="small" style="margin-top:8px;">Breeding Slots:</div>
     <div class="breedslots">${slots}</div>
-    <div class="row" style="margin-top:8px; gap:6px;">
-      <button class="secondary" data-act="toggle-events" data-id="${h.id}">${h.eventsEnabled===false ? '🛡️ Re-enable health risk' : '🛡️ Disable sickness/injury/death'}</button>
-      <button class="secondary" data-act="toggle-artlog" data-id="${h.id}">📖 ${artLogOpen ? 'Hide' : 'Show'} Art & Training Log (${h.artLog.length})</button>
+
+    <div class="row" style="margin-top:8px;gap:6px;flex-wrap:wrap;">
+      <button class="secondary" data-act="toggle-events" data-id="${h.id}">${h.eventsEnabled===false?'🛡️ Re-enable health risk':'🛡️ Disable health risk'}</button>
+      <button class="secondary" data-act="toggle-aging" data-id="${h.id}">${h.agingEnabled===false?'🎂 Re-enable auto-aging':'🎂 Disable auto-aging'}</button>
+      <button class="secondary" data-act="toggle-artlog" data-id="${h.id}">📖 ${artLogOpen?'Hide':'Show'} Art Log (${h.artLog.length})</button>
+      <button class="secondary" data-act="edit-horse" data-id="${h.id}">✏️ Edit Info</button>
       <button class="secondary" data-act="upload-ref" data-id="${h.id}">📋 ${h.referenceImage?'Change':'Upload'} Ref Sheet</button>
       <input type="file" accept="image/*" data-ref-input="${h.id}" style="display:none;" />
-      <button class="secondary danger" data-act="del" data-id="${h.id}">Remove from roster</button>
+      <button class="secondary" data-act="edit-conditions" data-id="${h.id}">⚕️ Conditions</button>
+      <button class="secondary" data-act="edit-tack" data-id="${h.id}">🏇 Tack</button>
+      <button class="secondary danger" data-act="del" data-id="${h.id}">Remove</button>
     </div>
     ${refImgHtml}
     ${artLogHtml}
   </div>`;
 }
+
+
+// ============================================
+// MODALS — Edit Info, Conditions, Tack
+// ============================================
+
+function showModal(title, bodyHtml, onSave){
+  document.getElementById('modal-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `<div style="background:var(--panel);border:1px solid #4a392a;border-radius:10px;padding:20px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;">
+    <h3 style="margin-top:0;color:var(--accent);">${title}</h3>
+    ${bodyHtml}
+    <div style="display:flex;gap:8px;margin-top:14px;">
+      <button id="modal-save" style="flex:1;">💾 Save</button>
+      <button id="modal-cancel" class="secondary" style="flex:none;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#modal-cancel').onclick = ()=> overlay.remove();
+  overlay.querySelector('#modal-save').onclick = ()=>{ onSave(overlay); overlay.remove(); };
+}
+
+function showEditHorseModal(id){
+  const h = state.horses.find(x=>x.id===id);
+  if(!h) return;
+  showModal('✏️ Edit Horse Info', `
+    <div class="small" style="color:var(--dim);margin-bottom:8px;">📅 Joined on Day ${h.joinedOnDay||1} — ages up every 365 days from that point.</div>
+    <div class="row"><div><label>Name</label><input id="em_name" value="${h.name}" /></div>
+    <div><label>Age</label><input id="em_age" type="number" value="${h.age}" /></div>
+    <div><label>Birth Year</label><input id="em_by" type="number" value="${h.birthYear||''}" placeholder="e.g. 2021" /></div></div>
+    <div class="row" style="margin-top:8px;">
+    <div><label>Breed</label><input id="em_breed" value="${h.breed||''}" /></div>
+    <div><label>Gender</label><select id="em_gender">
+      <option value="">— unset —</option>
+      ${["Mare","Stallion","Gelding","Filly","Colt","Rig"].map(g=>`<option ${h.gender===g?"selected":""}>${g}</option>`).join("")}
+    </select></div></div>
+    <div class="row" style="margin-top:8px;">
+    <div><label>Color</label><input id="em_color" value="${h.color||''}" /></div>
+    <div><label>Genotype</label><input id="em_geno" value="${h.geno||''}" placeholder="e.g. Ee Aa nCr" /></div></div>
+    <div style="margin-top:8px;"><label>Traits</label><input id="em_traits" value="${h.traits||''}" placeholder="e.g. Bold, Sensitive" /></div>
+    <div style="margin-top:8px;"><label>Mutations / Markings / Genetic Notes</label><textarea id="em_mutations" rows="3" style="width:100%;resize:vertical;">${h.mutations||''}</textarea></div>
+  `, (overlay)=>{
+    h.name      = overlay.querySelector('#em_name').value.trim() || h.name;
+    h.age       = Number(overlay.querySelector('#em_age').value) || h.age;
+    h.birthYear = overlay.querySelector('#em_by').value ? Number(overlay.querySelector('#em_by').value) : h.birthYear;
+    h.breed     = overlay.querySelector('#em_breed').value.trim() || h.breed;
+    h.gender    = overlay.querySelector('#em_gender').value;
+    h.color     = overlay.querySelector('#em_color').value.trim();
+    h.geno      = overlay.querySelector('#em_geno').value.trim();
+    h.traits    = overlay.querySelector('#em_traits').value.trim();
+    h.mutations = overlay.querySelector('#em_mutations').value.trim();
+    h.stage     = ageToStage(h.age);
+    saveHorse(h); save(); render();
+  });
+}
+
+function showConditionsModal(id){
+  const h = state.horses.find(x=>x.id===id);
+  if(!h) return;
+  if(!h.conditions) h.conditions = {};
+  const c = h.conditions;
+  const CONDS = [
+    {k:"blind",      label:"👁️ Blind",            note:"Increases injury likelihood by 15%"},
+    {k:"deaf",       label:"👂 Deaf",              note:"Cosmetic — affects story beats"},
+    {k:"asthma",     label:"💨 Asthma",            note:"Increases injury likelihood by 10%"},
+    {k:"cushings",   label:"🧪 Cushing's Disease", note:"Increases injury likelihood by 20%"},
+    {k:"kissingSpine",label:"🦴 Kissing Spine",    note:"Increases injury likelihood by 25%"},
+    {k:"suspensory", label:"⚠️ Prior Suspensory",  note:"Increases injury likelihood by 40% — compounds on reinjury"},
+  ];
+  const pastInj = (c.pastInjuries||[]).join(", ");
+  showModal('⚕️ Health Conditions — ' + h.name, `
+    <p class="small" style="color:var(--dim);margin-top:0;">All conditions are optional. Active conditions increase injury probability. Degenerative conditions (Cushing's, Kissing Spine) are permanent once checked.</p>
+    ${CONDS.map(cd=>`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px;background:#15100c;border-radius:6px;">
+        <input type="checkbox" id="cd_${cd.k}" ${c[cd.k]?"checked":""} style="width:auto;flex:none;" />
+        <div><label for="cd_${cd.k}" style="font-weight:bold;cursor:pointer;">${cd.label}</label>
+        <div class="small" style="color:var(--dim);">${cd.note}</div></div>
+      </div>`).join("")}
+    <div style="margin-top:10px;"><label>Past Injuries <span class="small">(comma-separated, e.g. "Bowed tendon 2023, Hock chip 2024")</span></label>
+    <input id="cd_pastinj" value="${pastInj}" placeholder="e.g. Bowed tendon, RF chip" /></div>
+    <div id="cd_modifier" class="small" style="margin-top:8px;color:var(--warn);"></div>
+  `, (overlay)=>{
+    CONDS.forEach(cd=>{ c[cd.k] = overlay.querySelector('#cd_'+cd.k).checked; });
+    const raw = overlay.querySelector('#cd_pastinj').value.trim();
+    c.pastInjuries = raw ? raw.split(",").map(s=>s.trim()).filter(Boolean) : [];
+    saveHorse(h); save(); render();
+  });
+  // Live modifier preview
+  setTimeout(()=>{
+    const preview = document.querySelector('#cd_modifier');
+    if(!preview) return;
+    function updatePreview(){
+      const tempC = {};
+      CONDS.forEach(cd=>{ tempC[cd.k] = document.querySelector('#cd_'+cd.k)?.checked||false; });
+      const rawPast = document.querySelector('#cd_pastinj')?.value.trim()||'';
+      tempC.pastInjuries = rawPast ? rawPast.split(",").filter(Boolean) : [];
+      const tempH = {...h, conditions: tempC};
+      const mod = conditionInjuryModifier(tempH);
+      preview.textContent = mod > 1 ? `Current injury likelihood modifier: ×${mod.toFixed(2)}` : '';
+    }
+    CONDS.forEach(cd=> document.querySelector('#cd_'+cd.k)?.addEventListener('change', updatePreview));
+    document.querySelector('#cd_pastinj')?.addEventListener('input', updatePreview);
+    updatePreview();
+  }, 50);
+}
+
+function showTackModal(id){
+  const h = state.horses.find(x=>x.id===id);
+  if(!h) return;
+  if(!h.tack) h.tack = {saddle:"",bridle:"",other:"",bonuses:[],inventoryLink:""};
+  showModal('🏇 Tack — ' + h.name, `
+    <p class="small" style="color:var(--dim);margin-top:0;">Record your horse's tack and any stat bonuses it provides. Link back to your shop inventory if applicable.</p>
+    <div class="row">
+      <div><label>Saddle</label><input id="tk_saddle" value="${h.tack.saddle||''}" placeholder="e.g. XC Saddle +2 Scope" /></div>
+      <div><label>Bridle</label><input id="tk_bridle" value="${h.tack.bridle||''}" placeholder="e.g. Flash Bridle" /></div>
+    </div>
+    <div style="margin-top:8px;"><label>Other Tack / Equipment</label><input id="tk_other" value="${h.tack.other||''}" placeholder="e.g. Martingale, Bell boots, Breastplate" /></div>
+    <div style="margin-top:8px;"><label>Stat Bonuses from Tack <span class="small">(e.g. +2 Scope, +1 Boldness)</span></label>
+    <input id="tk_bonuses" value="${(h.tack.bonuses||[]).join(", ")}" placeholder="e.g. +2 Scope, +1 Boldness" /></div>
+    <div style="margin-top:8px;"><label>Inventory / Shop Link <span class="small">(optional)</span></label>
+    <input id="tk_link" value="${h.tack.inventoryLink||''}" placeholder="https://… (link to your shop inventory)" /></div>
+  `, (overlay)=>{
+    h.tack.saddle = overlay.querySelector('#tk_saddle').value.trim();
+    h.tack.bridle = overlay.querySelector('#tk_bridle').value.trim();
+    h.tack.other  = overlay.querySelector('#tk_other').value.trim();
+    const rawBonuses = overlay.querySelector('#tk_bonuses').value.trim();
+    h.tack.bonuses = rawBonuses ? rawBonuses.split(",").map(s=>s.trim()).filter(Boolean) : [];
+    h.tack.inventoryLink = overlay.querySelector('#tk_link').value.trim();
+    saveHorse(h); save(); render();
+  });
+}
+
 
 function renderLoginScreen(){
   const app = document.getElementById('app');
@@ -874,11 +1140,24 @@ function render(){
   if(nd) nd.onclick = ()=>{ advanceDay(); activeTab = "log"; render(); };
   app.querySelectorAll('[data-act="del"]').forEach(b=> b.onclick = ()=> deleteHorse(b.dataset.id));
   app.querySelectorAll('[data-act="toggle-events"]').forEach(b=> b.onclick = ()=> toggleEvents(b.dataset.id));
+  app.querySelectorAll('[data-act="toggle-aging"]').forEach(b=>{
+    b.onclick = ()=>{
+      const h = state.horses.find(x=>x.id===b.dataset.id);
+      if(!h) return;
+      h.agingEnabled = h.agingEnabled === false ? true : false;
+      addLog(`🎂 Auto-aging ${h.agingEnabled ? 're-enabled' : 'disabled'} for ${h.name}.${h.agingEnabled ? ' They will age up every 365 days from Day '+(h.joinedOnDay||1)+'.' : ' Their age will stay frozen until re-enabled.'}`);
+      saveHorse(h); save(); render();
+    };
+  });
   app.querySelectorAll('[data-act="toggle-artlog"]').forEach(b=> b.onclick = ()=>{
     const id = b.dataset.id;
     if(expandedArtLogs.has(id)) expandedArtLogs.delete(id); else expandedArtLogs.add(id);
     render();
   });
+
+  app.querySelectorAll('[data-act="edit-horse"]').forEach(b=> b.onclick = ()=> showEditHorseModal(b.dataset.id));
+  app.querySelectorAll('[data-act="edit-conditions"]').forEach(b=> b.onclick = ()=> showConditionsModal(b.dataset.id));
+  app.querySelectorAll('[data-act="edit-tack"]').forEach(b=> b.onclick = ()=> showTackModal(b.dataset.id));
   app.querySelectorAll('[data-act="upload-photo"]').forEach(b=>{
     b.onclick = ()=>{
       const input = app.querySelector(`[data-photo-input="${b.dataset.id}"]`);
@@ -940,27 +1219,56 @@ function renderRoster(){
     <div class="row">
       <div><label>Name</label><input id="nh_name" placeholder="e.g. Banshee" /></div>
       <div><label>Age</label><input id="nh_age" type="number" min="0" value="3" /></div>
-      <div><label>Breed</label><input id="nh_breed" placeholder="e.g. Foundation, Moonwalker (custom OK)" /></div>
+      <div><label>Birth Year <span class="small">(optional)</span></label><input id="nh_birthyear" type="number" placeholder="e.g. 2021" /></div>
     </div>
-    <div class="row" style="margin-top:8px; align-items:center;">
-      <div style="display:flex; align-items:center; gap:8px; flex:none;">
-        <input type="checkbox" id="nh_events" checked style="width:auto;" />
-        <label style="margin:0;" for="nh_events">Allow sickness, injury &amp; death events for this horse</label>
+    <div class="row" style="margin-top:8px;">
+      <div><label>Breed</label><input id="nh_breed" placeholder="e.g. Foundation, Moonwalker" /></div>
+      <div><label>Gender <span class="small">(optional)</span></label>
+        <select id="nh_gender">
+          <option value="">— unset —</option>
+          <option>Mare</option><option>Stallion</option><option>Gelding</option>
+          <option>Filly</option><option>Colt</option><option>Rig</option>
+        </select>
       </div>
     </div>
-    <span class="small">Uncheck if you don't want this horse at risk of illness, injury, or career-ending/fatal events. They'll still get story beats from training and quiet day flavor — just no health risk.</span>
+    <div class="row" style="margin-top:8px;">
+      <div><label>Color <span class="small">(optional)</span></label><input id="nh_color" placeholder="e.g. Bay, Dapple Grey" /></div>
+      <div><label>Genotype <span class="small">(optional)</span></label><input id="nh_geno" placeholder="e.g. Ee Aa nCr" /></div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div><label>Traits <span class="small">(optional)</span></label><input id="nh_traits" placeholder="e.g. Bold, Sensitive, Lazy" /></div>
+      <div><label>Mutations / Markings <span class="small">(optional)</span></label><input id="nh_mutations" placeholder="e.g. Sooty, Pangare, Birdcatcher spots" /></div>
+    </div>
+    <div class="row" style="margin-top:8px; align-items:center; gap:20px;">
+      <div style="display:flex; align-items:center; gap:8px; flex:none;">
+        <input type="checkbox" id="nh_events" checked style="width:auto;" />
+        <label style="margin:0;" for="nh_events">Allow sickness, injury &amp; death events</label>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex:none;">
+        <input type="checkbox" id="nh_aging" checked style="width:auto;" />
+        <label style="margin:0;" for="nh_aging">Enable automatic age progression</label>
+      </div>
+    </div>
+    <span class="small">Health risk: uncheck to protect from illness, injury, and fatal events. Aging: uncheck to freeze age — horse will only age when you manually re-enable it.</span>
     <br><button id="nh_add">Add to Stable</button>
   `);
   wrap.appendChild(form);
   wrap.querySelector('#nh_add').onclick = ()=>{
-    const name = wrap.querySelector('#nh_name').value.trim();
-    const age = wrap.querySelector('#nh_age').value;
+    const name  = wrap.querySelector('#nh_name').value.trim();
+    const age   = wrap.querySelector('#nh_age').value;
     const breed = wrap.querySelector('#nh_breed').value.trim() || "Unspecified";
     const eventsEnabled = wrap.querySelector('#nh_events').checked;
+    const agingEnabled  = wrap.querySelector('#nh_aging').checked;
+    const gender    = wrap.querySelector('#nh_gender').value;
+    const color     = wrap.querySelector('#nh_color').value.trim();
+    const geno      = wrap.querySelector('#nh_geno').value.trim();
+    const traits    = wrap.querySelector('#nh_traits').value.trim();
+    const mutations = wrap.querySelector('#nh_mutations').value.trim();
+    const birthYear = wrap.querySelector('#nh_birthyear').value ? Number(wrap.querySelector('#nh_birthyear').value) : null;
     if(!name){ alert("Give your horse a name first!"); return; }
-    const h = newHorse({name, age, breed, eventsEnabled});
+    const h = newHorse({name, age, breed, eventsEnabled, agingEnabled, gender, color, geno, traits, mutations, birthYear});
     state.horses.push(h);
-    addLog(`🐎 ${h.name} (${breed}) has joined the stable at age ${h.age}.` + (!eventsEnabled ? ` (Health risk events disabled for ${h.name}.)` : ""));
+    addLog(`🐎 ${h.name} (${h.gender||breed}) has joined the stable at age ${h.age}.` + (!eventsEnabled ? ` (Health risk events disabled.)` : ""));
     save();
     render();
   };
