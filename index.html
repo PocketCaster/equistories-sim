@@ -78,20 +78,17 @@
   #app .slot.filled{background:var(--accent); color:#15100c;}
   #app .empty-msg{color:var(--dim); font-style:italic; padding:20px; text-align:center;}
   #modal-overlay input, #modal-overlay select, #modal-overlay textarea {
-    background:#15100c; border:1px solid #4a392a; color:#f1e6d8 !important; border-radius:5px; padding:7px 10px; width:100%; box-sizing:border-box; font-size:.9em; margin-top:4px;
+    background:#15100c; border:1px solid #4a392a; color:#f1e6d8 !important; border-radius:5px; padding:7px 10px; width:100%; box-sizing:border-box; font-size:.9em; margin-top:4px; font-family:Georgia,serif;
   }
-  #modal-overlay { color:#f1e6d8 !important; }
-  #modal-overlay * { color:#f1e6d8; }
+  #modal-overlay { color:#f1e6d8 !important; font-family:Georgia,serif; }
+  #modal-overlay * { color:#f1e6d8; box-sizing:border-box; }
   #modal-overlay label { font-size:.8em; text-transform:uppercase; letter-spacing:.04em; color:#b5a392 !important; display:block; }
   #modal-overlay .small { color:#b5a392 !important; font-size:.82em; }
   #modal-overlay .row { display:flex; gap:10px; }
   #modal-overlay .row > div { flex:1; }
-  #modal-overlay p { color:#b5a392; margin:0 0 8px; }
+  #modal-overlay p { color:#b5a392 !important; margin:0 0 8px; }
   #modal-overlay h3 { color:#c98a3a !important; }
-  #modal-overlay button { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:.9em; background:#c98a3a; color:#241a14 !important; font-weight:bold; }
-  #modal-overlay button.secondary { background:#2c2118; color:#f1e6d8 !important; border:1px solid #4a392a; }
-  #modal-overlay div[style*="background:#15100c"] { color:#f1e6d8 !important; }
-  #modal-overlay input[type="checkbox"] { width:auto; accent-color:#c98a3a; }
+  #modal-overlay input[type="checkbox"] { width:auto !important; accent-color:#c98a3a; }
   .tag.sick { background:#4a2a1a; color:#e8c0a0; border-color:#8a5a3a; }
   .tag.injured { background:#4a1a1a; color:#e8a0a0; border-color:#8a3a3a; }
   .tag.retired { background:#2a2a2a; color:#a0a0a0; border-color:#5a5a5a; }
@@ -1426,13 +1423,13 @@ function showModal(title, bodyHtml, onSave){
   document.getElementById('modal-overlay')?.remove();
   const overlay = document.createElement('div');
   overlay.id = 'modal-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
-  overlay.innerHTML = `<div style="background:#241a14;border:1px solid #c98a3a;border-radius:10px;padding:20px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;color:#f1e6d8;">
-    <h3 style="margin-top:0;color:var(--accent);">${title}</h3>
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `<div style="background:#2c1f16;border:2px solid #c98a3a;border-radius:10px;padding:24px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;color:#f1e6d8;font-family:Georgia,serif;">
+    <h3 style="margin-top:0;color:#c98a3a;font-family:'Palatino Linotype',Georgia,serif;">${title}</h3>
     ${bodyHtml}
     <div style="display:flex;gap:8px;margin-top:14px;">
-      <button id="modal-save" style="flex:1;">💾 Save</button>
-      <button id="modal-cancel" class="secondary" style="flex:none;">Cancel</button>
+      <button id="modal-save" style="flex:1;background:#c98a3a;color:#241a14;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:.95em;">💾 Save</button>
+      <button id="modal-cancel" style="flex:none;background:#2c2118;color:#f1e6d8;border:1px solid #4a392a;padding:10px 18px;border-radius:6px;cursor:pointer;font-size:.95em;">Cancel</button>
     </div>
   </div>`;
   document.body.appendChild(overlay);
@@ -1444,7 +1441,7 @@ function showEditHorseModal(id){
   const h = state.horses.find(x=>x.id===id);
   if(!h) return;
   showModal('✏️ Edit Horse Info', `
-    <div class="small" style="color:var(--dim);margin-bottom:8px;">📅 Joined on Day ${h.joinedOnDay||1} — ages up every 365 days from that point.</div>
+    <div class="small" style="color:#b5a392;margin-bottom:8px;">📅 Joined on Day ${h.joinedOnDay||1} — ages up every 365 days from that point.</div>
     <div class="row"><div><label>Name</label><input id="em_name" value="${h.name}" /></div>
     <div><label>Age</label><input id="em_age" type="number" value="${h.age}" /></div>
     <div><label>Birth Year</label><input id="em_by" type="number" value="${h.birthYear||''}" placeholder="e.g. 2021" /></div></div>
@@ -1489,16 +1486,16 @@ function showConditionsModal(id){
   ];
   const pastInj = (c.pastInjuries||[]).join(", ");
   showModal('⚕️ Health Conditions — ' + h.name, `
-    <p class="small" style="color:var(--dim);margin-top:0;">All conditions are optional. Active conditions increase injury probability. Degenerative conditions (Cushing's, Kissing Spine) are permanent once checked.</p>
+    <p class="small" style="color:#b5a392;margin-top:0;">All conditions are optional. Active conditions increase injury probability. Degenerative conditions (Cushing's, Kissing Spine) are permanent once checked.</p>
     ${CONDS.map(cd=>`
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px;background:#15100c;border-radius:6px;color:#f1e6d8;">
         <input type="checkbox" id="cd_${cd.k}" ${c[cd.k]?"checked":""} style="width:auto;flex:none;" />
         <div><label for="cd_${cd.k}" style="font-weight:bold;cursor:pointer;">${cd.label}</label>
-        <div class="small" style="color:var(--dim);">${cd.note}</div></div>
+        <div class="small" style="color:#b5a392;">${cd.note}</div></div>
       </div>`).join("")}
     <div style="margin-top:10px;"><label>Past Injuries <span class="small">(comma-separated, e.g. "Bowed tendon 2023, Hock chip 2024")</span></label>
     <input id="cd_pastinj" value="${pastInj}" placeholder="e.g. Bowed tendon, RF chip" /></div>
-    <div id="cd_modifier" class="small" style="margin-top:8px;color:var(--warn);"></div>
+    <div id="cd_modifier" class="small" style="margin-top:8px;color:#d4a030;"></div>
   `, (overlay)=>{
     CONDS.forEach(cd=>{ c[cd.k] = overlay.querySelector('#cd_'+cd.k).checked; });
     const raw = overlay.querySelector('#cd_pastinj').value.trim();
@@ -1529,7 +1526,7 @@ function showTackModal(id){
   if(!h) return;
   if(!h.tack) h.tack = {saddle:"",bridle:"",other:"",bonuses:[],inventoryLink:""};
   showModal('🏇 Tack — ' + h.name, `
-    <p class="small" style="color:var(--dim);margin-top:0;">Record your horse's tack and any stat bonuses it provides. Link back to your shop inventory if applicable.</p>
+    <p class="small" style="color:#b5a392;margin-top:0;">Record your horse's tack and any stat bonuses it provides. Link back to your shop inventory if applicable.</p>
     <div class="row">
       <div><label>Saddle</label><input id="tk_saddle" value="${h.tack.saddle||''}" placeholder="e.g. XC Saddle +2 Scope" /></div>
       <div><label>Bridle</label><input id="tk_bridle" value="${h.tack.bridle||''}" placeholder="e.g. Flash Bridle" /></div>
@@ -1576,7 +1573,7 @@ function renderVetFarrier(){
   const vaccCard = el('div','card');
   vaccCard.innerHTML = `
     <h3>💉 Routine Vaccinations</h3>
-    <p class="small" style="color:var(--dim);margin-top:0;">Give all horses their annual shots. Reduces illness chance by ~60% for the next 365 days. All horses take the next day off — no training or competition.</p>
+    <p class="small" style="color:#b5a392;margin-top:0;">Give all horses their annual shots. Reduces illness chance by ~60% for the next 365 days. All horses take the next day off — no training or competition.</p>
     <div id="vacc_list">
       ${state.horses.filter(h=>h.status!=="deceased").map(h=>{
         const fc = h.vetCare||{};
@@ -1587,7 +1584,7 @@ function renderVetFarrier(){
           : `❌ Never vaccinated`;
         return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#15100c;border-radius:6px;margin-bottom:6px;">
           <div><b>${h.name}</b> <span class="small">${status}</span></div>
-          ${due ? `<button class="secondary" data-act="vaccinate" data-id="${h.id}" style="margin:0;font-size:.8em;padding:5px 10px;">💉 Vaccinate</button>` : `<span class="small" style="color:var(--good);">Up to date</span>`}
+          ${due ? `<button class="secondary" data-act="vaccinate" data-id="${h.id}" style="margin:0;font-size:.8em;padding:5px 10px;">💉 Vaccinate</button>` : `<span class="small" style="color:#7a9b6e;">Up to date</span>`}
         </div>`;
       }).join("")}
     </div>
@@ -1614,7 +1611,7 @@ function renderVetFarrier(){
   const farrCard = el('div','card');
   farrCard.innerHTML = `
     <h3>🪝 Farrier Visits</h3>
-    <p class="small" style="color:var(--dim);margin-top:0;">Schedule every 45 days. The farrier will reshoe and may discover hoof issues. Existing hoof problems can also be treated.</p>
+    <p class="small" style="color:#b5a392;margin-top:0;">Schedule every 45 days. The farrier will reshoe and may discover hoof issues. Existing hoof problems can also be treated.</p>
     <div id="farr_list">
       ${state.horses.filter(h=>h.status!=="deceased").map(h=>{
         const fc = h.farrierCare||{};
@@ -1627,7 +1624,7 @@ function renderVetFarrier(){
         return `<div style="padding:8px;background:#15100c;border-radius:6px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div><b>${h.name}</b><br><span class="small">${statusStr}</span>
-            ${issues.length ? `<div class="small" style="color:var(--warn);margin-top:2px;">🪝 Known issues: ${issues.join(", ")}</div>` : ""}
+            ${issues.length ? `<div class="small" style="color:#d4a030;margin-top:2px;">🪝 Known issues: ${issues.join(", ")}</div>` : ""}
             </div>
             <button class="secondary" data-act="farrier" data-id="${h.id}" style="margin:0;font-size:.8em;padding:5px 10px;"${!due&&!issues.length?' disabled':''}>🪝 ${due?"Schedule Visit":"Treat Issues"}</button>
           </div>
@@ -1650,13 +1647,13 @@ function renderVetFarrier(){
     const treatCard = el('div','card');
     treatCard.innerHTML = `
       <h3>⚕️ Treatment Care</h3>
-      <p class="small" style="color:var(--dim);margin-top:0;">Log treatment sessions for sick or injured horses. Attach art or writing for full EXP + bonus Harmony — it builds trust during recovery.</p>
+      <p class="small" style="color:#b5a392;margin-top:0;">Log treatment sessions for sick or injured horses. Attach art or writing for full EXP + bonus Harmony — it builds trust during recovery.</p>
       ${sickHorses.map(h=>{
         const activeConds = Object.entries(h.activeConditions||{}).filter(([,v])=>v.active).map(([id])=>CONDITIONS[id]?.name||id);
         return `
         <div style="padding:10px;background:#15100c;border-radius:6px;margin-bottom:10px;">
           <div style="margin-bottom:6px;"><b>${h.name}</b> <span class="tag ${h.status}">${h.status} · ${h.statusDays}d left</span>
-          ${activeConds.length?`<span class="small" style="color:var(--dim);"> — ${activeConds.join(", ")}</span>`:""}
+          ${activeConds.length?`<span class="small" style="color:#b5a392;"> — ${activeConds.join(", ")}</span>`:""}
           </div>
           <div style="margin-bottom:6px;"><label>Treatment Type</label>
             <select data-treat-type="${h.id}">
@@ -1728,7 +1725,7 @@ function renderVetFarrier(){
   const condHorses = state.horses.filter(h=> h.activeConditions && Object.values(h.activeConditions).some(c=>c.active));
   if(condHorses.length){
     const chronCard = el('div','card');
-    let chronHtml = `<h3>🏥 Active Condition Management</h3><p class="small" style="color:var(--dim);margin-top:0;">Manage recurring care, therapeutic requirements, and restrictions for horses with active conditions.</p>`;
+    let chronHtml = `<h3>🏥 Active Condition Management</h3><p class="small" style="color:#b5a392;margin-top:0;">Manage recurring care, therapeutic requirements, and restrictions for horses with active conditions.</p>`;
     condHorses.forEach(h=>{
       const ac = h.activeConditions;
       const activeList = Object.entries(ac).filter(([,v])=>v.active);
@@ -1741,7 +1738,7 @@ function renderVetFarrier(){
         const PROG_LABELS = ["Mild","Moderate","Severe","Critical"];
         const prog = PROG_LABELS[entry.progressionLevel||0];
         chronHtml += `<div style="margin-bottom:8px;padding:6px;background:#1b1410;border-radius:5px;border-left:3px solid ${def.color||'#4a392a'};">
-          <div style="font-size:.85em;font-weight:bold;color:#e8c0a0;">${def.icon} ${def.name} <span style="color:var(--dim);font-weight:normal;">(${prog})</span></div>`;
+          <div style="font-size:.85em;font-weight:bold;color:#e8c0a0;">${def.icon} ${def.name} <span style="color:#b5a392;font-weight:normal;">(${prog})</span></div>`;
         // Recurring care button
         if(def.recurringCare){
           const label = def.recurringCare.type === "osphos" ? "OSPHOS" : "Adequan";
@@ -1757,16 +1754,16 @@ function renderVetFarrier(){
             <button data-act="toggle-dry-paddock" data-id="${h.id}" class="secondary" style="font-size:.78em;padding:4px 8px;">${entry.dryPaddock?"🌿 Return to Pasture ⚠️":"🏠 Enforce Dry Paddock"}</button>
             <button data-act="toggle-strict-diet" data-id="${h.id}" class="secondary" style="font-size:.78em;padding:4px 8px;">${entry.strictDiet?"🌾 Relax Diet":"🌾 Enforce Strict Diet"}</button>
           </div>
-          <div class="small" style="margin-top:3px;color:var(--dim);">Dry paddock: ${entry.dryPaddock?"✅":"❌"} · Strict diet: ${entry.strictDiet?"✅":"❌"} · Shoes: ${entry.shoesFitted?"✅":"❌"}</div>`;
+          <div class="small" style="margin-top:3px;color:#b5a392;">Dry paddock: ${entry.dryPaddock?"✅":"❌"} · Strict diet: ${entry.strictDiet?"✅":"❌"} · Shoes: ${entry.shoesFitted?"✅":"❌"}</div>`;
         }
         // Navicular shoes
         if(id === "navicular"){
-          chronHtml += `<div class="small" style="margin-top:3px;color:var(--dim);">Egg-bar shoes fitted: ${entry.shoesFitted?"✅":"❌ — schedule a farrier visit to fit therapeutic shoes"}</div>`;
+          chronHtml += `<div class="small" style="margin-top:3px;color:#b5a392;">Egg-bar shoes fitted: ${entry.shoesFitted?"✅":"❌ — schedule a farrier visit to fit therapeutic shoes"}</div>`;
         }
         // Restrictions
         if(def.restrictions?.length || def.permanentRestrictions?.length){
           const restr = [...(def.restrictions||[]),...(def.permanentRestrictions||[])];
-          chronHtml += `<div class="small" style="margin-top:3px;color:var(--warn);">🚫 ${restr.join(" · ")}</div>`;
+          chronHtml += `<div class="small" style="margin-top:3px;color:#d4a030;">🚫 ${restr.join(" · ")}</div>`;
         }
         // Mark resolved button for non-chronic or manually cleared conditions
         const canResolve = def.severity !== "chronic" || window.confirm;
@@ -1852,10 +1849,10 @@ function showFarrierModal(h, container){
   const fc = h.farrierCare || {};
   const issues = fc.hoofIssues||[];
   showModal(`🪝 Farrier Visit — ${h.name}`, `
-    <p class="small" style="color:var(--dim);margin-top:0;">The farrier will reshoe ${h.name} and check for hoof issues. There's a chance they discover something new.</p>
+    <p class="small" style="color:#b5a392;margin-top:0;">The farrier will reshoe ${h.name} and check for hoof issues. There's a chance they discover something new.</p>
     ${h.chronicCare?.navicular && !h.chronicCare?.navicularShoes ? `<div class="result fail" style="margin-bottom:8px;">⚠️ Navicular diagnosed — farrier should fit egg-bar shoes with wedge pads.</div>` : ""}
     ${h.chronicCare?.laminitis && !h.chronicCare?.laminitisShoes ? `<div class="result fail" style="margin-bottom:8px;">⚠️ Laminitis diagnosed — farrier should fit therapeutic heel-lift shoes.</div>` : ""}
-    ${issues.length ? `<div class="small" style="color:var(--warn);margin-bottom:8px;">🪝 Known issues to treat: ${issues.join(", ")}</div>` : ""}
+    ${issues.length ? `<div class="small" style="color:#d4a030;margin-bottom:8px;">🪝 Known issues to treat: ${issues.join(", ")}</div>` : ""}
     <label>Shoe type (optional)</label>
     <select id="farr_shoes">
       <option value="">Standard shoes</option>
