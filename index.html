@@ -32,7 +32,9 @@
     background:var(--accent); color:#231a12; border:none; padding:8px 14px; border-radius:6px;
     cursor:pointer; font-weight:bold; font-family:inherit; font-size:.9em; margin-top:6px;
   }
-  #app button.secondary{background:var(--panel2); color:var(--text); border:1px solid var(--accent);}
+  #app button.secondary{background:var(--panel2); color:var(--text) !important; border:1px solid var(--accent);}
+  #app .horse-card button.secondary{color:var(--text) !important;}
+  #app .card button.secondary{color:var(--text) !important;}
   #app button.danger{background:var(--danger); color:#fff;}
   #app button:hover{opacity:.88;}
   #app .horse-card{background:var(--panel2); border:1px solid #4a392a; border-radius:8px; padding:12px; margin-bottom:10px;}
@@ -89,6 +91,11 @@
   .tag.healthy { background:#1a3a2a; color:#a0e8c0; border-color:#3a7a5a; }
   span.artlog-link, a.artlog-link { color:var(--accent); text-decoration:none; }
   span.artlog-link:hover, a.artlog-link:hover { text-decoration:underline; }
+  /* Ensure all secondary buttons always have readable text regardless of inline styles */
+  #app button.secondary, button.secondary { color: #f1e6d8 !important; }
+  #app button.danger, button.danger { color: #fff !important; }
+  /* Edit/condition/tack button row wrapping fix */
+  .horse-card .row { flex-wrap: wrap; }
 </style>
 <script>
 (function(){
@@ -855,6 +862,19 @@ function advanceDay(){
       if(h.statusDays <= 0){
         addLog(`✅ ${h.name} has fully recovered and is cleared for work.`, endingDay);
         h.status = "healthy"; h.statusDays = 0;
+        // Auto-resolve non-chronic conditions whose layup has ended
+        if(h.activeConditions){
+          Object.entries(h.activeConditions).forEach(([id, entry])=>{
+            if(!entry.active) return;
+            const def = CONDITIONS[id];
+            if(!def) return;
+            // Only auto-resolve minor/moderate non-chronic conditions
+            if(def.severity !== "chronic" && def.severity !== "severe" && !def.recurringCare){
+              entry.active = false;
+              addLog(`✅ ${h.name}'s ${def.name} has fully resolved.`, endingDay);
+            }
+          });
+        }
       } else {
         addLog(`🩺 ${h.name} is still recovering — ${h.statusDays} day(s) left.`, endingDay);
       }
@@ -1741,6 +1761,9 @@ function renderVetFarrier(){
           const restr = [...(def.restrictions||[]),...(def.permanentRestrictions||[])];
           chronHtml += `<div class="small" style="margin-top:3px;color:var(--warn);">🚫 ${restr.join(" · ")}</div>`;
         }
+        // Mark resolved button for non-chronic or manually cleared conditions
+        const canResolve = def.severity !== "chronic" || window.confirm;
+        chronHtml += `<button data-act="resolve-condition" data-id="${h.id}" data-cond="${id}" class="secondary" style="font-size:.75em;padding:3px 8px;margin-top:4px;border-color:#5a3a3a;color:#e8a0a0;">🗑️ Mark as Resolved</button>`;
         chronHtml += `</div>`;
       });
       chronHtml += `</div>`;
@@ -1784,6 +1807,22 @@ function renderVetFarrier(){
         const entry = h.activeConditions.laminitis;
         entry.strictDiet = !entry.strictDiet;
         addLog(`🌾 ${h.name} is now on a ${entry.strictDiet?"strict timothy-only diet (no alfalfa, no sugary treats, low-carb)":"relaxed diet — monitor for flares!"}`);
+        saveHorse(h); save(); render();
+      };
+    });
+    chronCard.querySelectorAll('[data-act="resolve-condition"]').forEach(b=>{
+      b.onclick = ()=>{
+        const h = state.horses.find(x=>x.id===b.dataset.id);
+        const condId = b.dataset.cond;
+        if(!h?.activeConditions?.[condId]) return;
+        const def = CONDITIONS[condId];
+        const isChronic = def?.severity === "chronic" || def?.recurringCare;
+        const warn = isChronic
+          ? `⚠️ ${def?.name} is a chronic condition. Mark it as resolved only if your vet has officially cleared ${h.name}. Are you sure?`
+          : `Mark ${def?.name||condId} as resolved for ${h.name}?`;
+        if(!confirm(warn)) return;
+        h.activeConditions[condId].active = false;
+        addLog(`✅ ${h.name}'s ${def?.name||condId} has been marked as resolved.`);
         saveHorse(h); save(); render();
       };
     });
