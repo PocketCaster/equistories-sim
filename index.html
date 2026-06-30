@@ -78,13 +78,20 @@
   #app .slot.filled{background:var(--accent); color:#15100c;}
   #app .empty-msg{color:var(--dim); font-style:italic; padding:20px; text-align:center;}
   #modal-overlay input, #modal-overlay select, #modal-overlay textarea {
-    background:#15100c; border:1px solid #4a392a; color:var(--text); border-radius:5px; padding:7px 10px; width:100%; box-sizing:border-box; font-size:.9em; margin-top:4px;
+    background:#15100c; border:1px solid #4a392a; color:#f1e6d8 !important; border-radius:5px; padding:7px 10px; width:100%; box-sizing:border-box; font-size:.9em; margin-top:4px;
   }
-  #modal-overlay label { font-size:.8em; text-transform:uppercase; letter-spacing:.04em; color:var(--dim); display:block; }
+  #modal-overlay { color:#f1e6d8 !important; }
+  #modal-overlay * { color:#f1e6d8; }
+  #modal-overlay label { font-size:.8em; text-transform:uppercase; letter-spacing:.04em; color:#b5a392 !important; display:block; }
+  #modal-overlay .small { color:#b5a392 !important; font-size:.82em; }
   #modal-overlay .row { display:flex; gap:10px; }
   #modal-overlay .row > div { flex:1; }
-  #modal-overlay button { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:.9em; background:var(--accent); color:#241a14; font-weight:bold; }
-  #modal-overlay button.secondary { background:#2c2118; color:var(--text); border:1px solid #4a392a; }
+  #modal-overlay p { color:#b5a392; margin:0 0 8px; }
+  #modal-overlay h3 { color:#c98a3a !important; }
+  #modal-overlay button { padding:9px 18px; border:none; border-radius:6px; cursor:pointer; font-size:.9em; background:#c98a3a; color:#241a14 !important; font-weight:bold; }
+  #modal-overlay button.secondary { background:#2c2118; color:#f1e6d8 !important; border:1px solid #4a392a; }
+  #modal-overlay div[style*="background:#15100c"] { color:#f1e6d8 !important; }
+  #modal-overlay input[type="checkbox"] { width:auto; accent-color:#c98a3a; }
   .tag.sick { background:#4a2a1a; color:#e8c0a0; border-color:#8a5a3a; }
   .tag.injured { background:#4a1a1a; color:#e8a0a0; border-color:#8a3a3a; }
   .tag.retired { background:#2a2a2a; color:#a0a0a0; border-color:#5a5a5a; }
@@ -1420,7 +1427,7 @@ function showModal(title, bodyHtml, onSave){
   const overlay = document.createElement('div');
   overlay.id = 'modal-overlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;';
-  overlay.innerHTML = `<div style="background:var(--panel);border:1px solid #4a392a;border-radius:10px;padding:20px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;">
+  overlay.innerHTML = `<div style="background:#241a14;border:1px solid #c98a3a;border-radius:10px;padding:20px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;color:#f1e6d8;">
     <h3 style="margin-top:0;color:var(--accent);">${title}</h3>
     ${bodyHtml}
     <div style="display:flex;gap:8px;margin-top:14px;">
@@ -1484,7 +1491,7 @@ function showConditionsModal(id){
   showModal('⚕️ Health Conditions — ' + h.name, `
     <p class="small" style="color:var(--dim);margin-top:0;">All conditions are optional. Active conditions increase injury probability. Degenerative conditions (Cushing's, Kissing Spine) are permanent once checked.</p>
     ${CONDS.map(cd=>`
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px;background:#15100c;border-radius:6px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px;background:#15100c;border-radius:6px;color:#f1e6d8;">
         <input type="checkbox" id="cd_${cd.k}" ${c[cd.k]?"checked":""} style="width:auto;flex:none;" />
         <div><label for="cd_${cd.k}" style="font-weight:bold;cursor:pointer;">${cd.label}</label>
         <div class="small" style="color:var(--dim);">${cd.note}</div></div>
